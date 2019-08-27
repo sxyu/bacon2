@@ -11,6 +11,8 @@ are merged into one module.
 
 - Python 3. I am using 3.5, should probably work for other minor versions as well.
 
+ - Please also install `libpython3`, `libpython3-dev`
+
 ## Steps
 
 1. `git clone https://github.com/sxyu/bacon2 && cd bacon2`
