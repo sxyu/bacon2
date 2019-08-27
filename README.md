@@ -47,11 +47,17 @@ sess = bacon.Session('x') create a persistent session.
                           strategies and results will continue
                           to exist.
 bacon.sessions()          list all persistent session names.
-sess.add('id'[, 'name'])  add a strategy with id and display name
+sess.add('id'[,'name'])   add a strategy with id and display name
                           (display name is shown on scoreboard,
                            id is usually student's email)
                           if name is not specified then the id is used
                           as the name.
+sess.add('id', 'name', x) (overflow from above) add a strategy
+                          with id and display name
+                          and initialize all rolls to x (default
+                          is 0)
+sess.add_random()         add a strategy with each roll number
+                          chosen uniformly at random
 sess.add(Strategy)        add a strategy object directly
 sess.remove('id')         remove a strategy with id
 sess.remove(Strategy)     remove a strategy object
@@ -102,7 +108,8 @@ res[i]                    get the internal 'half-row' of win rates
 res[i, j]                 get win rate of ith player in contest
                           playing against jth player (integers,
                           order is same as in res.list())
-res.array()               get numpy array of win rates
+res.array()               get numpy array of win rates:
+                          arr[first_player, second_player]
 ```
 
 ## Extra utils
@@ -118,7 +125,7 @@ res.array()               get numpy array of win rates
 ```
 bacon.io.write_py(Strategy, path)      create valid hog_contest.py script
                                        returning roll numbers for the
-                                       strategy
+                                       strategy (similar to hogmat)
 bacon.io.write_legacy(Strategy, path)  write legacy Bacon .strat format
 strat = bacon.io.read_legacy(path)     read legacy Bacon .strat format
 ```
