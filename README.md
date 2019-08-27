@@ -47,8 +47,14 @@ sess = bacon.Session('x') create a persistent session.
                           strategies and results will continue
                           to exist.
 bacon.sessions()          list all persistent session names.
-sess.add('id'[, 'name'])  add a strategy with id
+sess.add('id'[, 'name'])  add a strategy with id and display name
+                          (display name is shown on scoreboard,
+                           id is usually student's email)
+                          if name is not specified then the id is used
+                          as the name.
+sess.add(Strategy)        add a strategy object directly
 sess.remove('id')         remove a strategy with id
+sess.remove(Strategy)     remove a strategy object
 sess.clear()              clear all strategies
 sess.unlink()             'unlinks' a session, deleting persistence
                           files and converting to transient session
@@ -61,7 +67,8 @@ len(sess)                 number of strategies
 ## Strategies
 
 ```
-sess.strategies()         get a list of Strategy objects
+Strategy(id[, name])      create an empty strategy with id and name
+sess.strategies()         get a list of Strategy objects in session
 stat = sess['id']         get Strategy object by id
 stat[our, opponent]       get roll number in strategy
 stat[our, opponent] = x   set roll number in strategy
