@@ -66,7 +66,7 @@ sess.unlink()             'unlinks' a session, deleting persistence
                           files and converting to transient session
                           which will be deleted when you exit Python
 sess.ids()                list all strategy ids
-sess.names()              list all strategy namess
+sess.names()              list all strategy names
 len(sess)                 number of strategies
 ```
 
@@ -82,6 +82,8 @@ strat.set_const(i)        set all rolls to a constant
 strat.set_random()        set all rolls randomly
 strat.array()             get numpy array of roll numbers (int8)
 strat.set_array()         set roll numbers from numpy array (must be int8)
+strat.name                get/set strategy name
+strat.id                  get strategy id (immutable)
 ```
 
 ## Contest flow / Results
@@ -110,6 +112,23 @@ res[i, j]                 get win rate of ith player in contest
                           order is same as in res.list())
 res.array()               get numpy array of win rates:
                           arr[first_player, second_player]
+```
+
+## Config
+
+The `bacon.config` module contains game constants and functions from `config.hpp` and `config.cpp` 
+
+```
+bacon.config.DICE_SIDES        sides of dice, usally 6
+bacon.config.GOAL              goal score, usually 100
+bacon.config.MIN_ROLLS         min number of dice rolls in a turn
+bacon.config.MAX_ROLLS         max number of dice rolls in a turn
+bacon.config.MOD_TROT          time trot modulus
+bacon.config.ENABLE_TIME_TROT  whether time trot is enabled
+bacon.config.ENABLE_SWINE_SWAP whether swine swap is enabled
+bacon.config.swine_swap(a, b)  checks if two scores should result in
+                               a swine swap
+bacon.config.free_bacon(a)     gets score obtainable through free bacon
 ```
 
 ## Extra utils
