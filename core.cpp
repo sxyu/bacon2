@@ -6,7 +6,7 @@
 
 namespace bacon {
 namespace {
-// wtsfri][j]: # ways to get sum j by rolling i dice
+// wtsfr[i][j]: # ways to get sum j by rolling i dice
 // A bit ugly but more convenience to use
 int ways_to_sum_for_rolls[hog::MAX_ROLLS + 1][hog::DICE_SIDES * hog::MAX_ROLLS + 1];
 
@@ -54,12 +54,12 @@ double HogCore::win_rate(const HogStrategy& strat, const HogStrategy& oppo_strat
 
 double HogCore::win_rate_going_first(const HogStrategy& strat, const HogStrategy& oppo_strat) {
     clear_win_rates();
-    return HogCore::compute_win_rate_recursive(strat, oppo_strat, 0, 0, 0, 0, hog::ENABLE_TIME_TROT);
+    return compute_win_rate_recursive(strat, oppo_strat, 0, 0, 0, 0, hog::ENABLE_TIME_TROT);
 }
 
 double HogCore::win_rate_going_last(const HogStrategy& strat, const HogStrategy& oppo_strat) {
     clear_win_rates();
-    return 1.0 - HogCore::compute_win_rate_recursive(oppo_strat, strat, 0, 0, 0, 0, hog::ENABLE_TIME_TROT);
+    return 1.0 - compute_win_rate_recursive(oppo_strat, strat, 0, 0, 0, 0, hog::ENABLE_TIME_TROT);
 }
 
 double HogCore::compute_win_rate_recursive(const HogStrategy& strat, const HogStrategy & oppo_strat, int score, int oppo_score, int who, int turn, int trot) {
@@ -112,7 +112,6 @@ double HogCore::compute_win_rate_recursive(const HogStrategy& strat, const HogSt
 }
 
 void HogCore::clear_win_rates() {
-    // Quick and dirty clear
     memset(win_rates, 0, sizeof win_rates);
 }
 }

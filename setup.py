@@ -1,7 +1,11 @@
-""" Bacon 2 Python module setup using setuptools """
+"""
+Bacon 2 Python module setup using setuptools
+Adapted from https://github.com/pybind/python_example
+"""
 import sys
 from setuptools import setup, Extension
 from setuptools.command.build_ext import build_ext
+from setuptools.command.develop import develop
 import setuptools
 
 __version__ = '2.0.0'
@@ -93,19 +97,27 @@ class BuildExt(build_ext):
         ct = self.compiler.compiler_type
         opts = self.c_opts.get(ct, [])
         link_opts = self.l_opts.get(ct, [])
+        ver = self.distribution.get_version()
         if ct == 'unix':
-            opts.append('-DVERSION_INFO="%s"' %
-                self.distribution.get_version())
+            opts.append('-DVERSION_INFO="%s"' % ver)
             opts.append(cpp_flag(self.compiler))
             if has_flag(self.compiler, '-fvisibility=hidden'):
                 opts.append('-fvisibility=hidden')
         elif ct == 'msvc':
-            opts.append('/DVERSION_INFO=\\"%s\\"' %
-                    self.distribution.get_version())
+            opts.append('/DVERSION_INFO=\\"%s\\"' % ver)
         for ext in self.extensions:
             ext.extra_compile_args = opts
             ext.extra_link_args = link_opts
         build_ext.build_extensions(self)
+
+
+class UpdateSubmodules(develop):
+    def run(self):
+        from os import path
+        from subprocess import check_call
+        if path.exists('.git'):
+            check_call(['git', 'submodule', 'update', '--init', '--recursive'])
+        develop.run(self)
 
 
 setup(
@@ -119,7 +131,10 @@ setup(
     ext_modules=EXT_MODULES,
     install_requires=['pybind11>=2.3'],
     setup_requires=['pybind11>=2.3'],
-    cmdclass={'build_ext': BuildExt},
+    cmdclass={
+      'build_ext': BuildExt,
+      'develop': UpdateSubmodules
+    },
     zip_safe=False,
 )
 

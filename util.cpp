@@ -38,23 +38,6 @@ std::string trim_name(const std::string& name, int max_len) {
     return name;
 }
 
-std::vector<std::string> lsdir(const std::string & path) {
-    tinydir_dir dir;
-    tinydir_open(&dir, path.c_str());
-
-    std::vector<std::string> out;
-    while (dir.has_next) {
-        tinydir_file file;
-        tinydir_readfile(&dir, &file);
-        std::string fname(file.name);
-        if (fname != "." && fname != "..") {
-            out.emplace_back(fname);
-        }
-        tinydir_next(&dir);
-    }
-    return out;
-}
-
 std::string quote(const std::string& string) {
     std::string sb("\"");
     sb.reserve(string.size() + 2);
@@ -112,6 +95,23 @@ std::string unquote(const std::string& string) {
         }
     }
     return sb;
+}
+
+std::vector<std::string> lsdir(const std::string & path) {
+    tinydir_dir dir;
+    tinydir_open(&dir, path.c_str());
+
+    std::vector<std::string> out;
+    while (dir.has_next) {
+        tinydir_file file;
+        tinydir_readfile(&dir, &file);
+        std::string fname(file.name);
+        if (fname != "." && fname != "..") {
+            out.emplace_back(fname);
+        }
+        tinydir_next(&dir);
+    }
+    return out;
 }
 
 void create_dir(const std::string& path) {

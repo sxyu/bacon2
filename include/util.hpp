@@ -48,14 +48,14 @@ inline void read_bin(std::istream& is, T& val) {
 /** Trim name and add ... if over 'max_len' in length */
 std::string trim_name(const std::string& name, int max_len = 40);
 
-/** List a directory */
-std::vector<std::string> lsdir(const std::string & path);
-
 /** Escape a string */
 std::string quote(const std::string& string);
 
 /** Un-escape a string */
 std::string unquote(const std::string& string);
+
+/** List a directory */
+std::vector<std::string> lsdir(const std::string & path);
 
 /** Create directory */
 void create_dir(const std::string& path);
