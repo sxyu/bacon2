@@ -1,0 +1,118 @@
+#include "core.hpp"
+
+#include <cstring>
+//#include <iostream>
+#include "strategy.hpp"
+
+namespace bacon {
+namespace {
+// wtsfri][j]: # ways to get sum j by rolling i dice
+// A bit ugly but more convenience to use
+int ways_to_sum_for_rolls[hog::MAX_ROLLS + 1][hog::DICE_SIDES * hog::MAX_ROLLS + 1];
+
+void precompute() {
+    if (!ways_to_sum_for_rolls[0][0]) {
+        // Precompute once, copied from Bacon v1
+        ways_to_sum_for_rolls[0][0] = 1; // base case
+        for (int i = 1; i <= hog::MAX_ROLLS; ++i) {
+            // the lowest possible sum for the previous number of rolls
+            int prev_low = 2 * (i - 1);
+            // add # ways of getting a score of one due to Pig Out
+            int num_ones = 0, last_pow = 1, last_choose = 1;
+
+            for (int j = 1; j <= i; ++j) {
+                num_ones += last_choose * last_pow;
+                last_pow *= 5;
+                last_choose = last_choose * (i - j + 1) / j;
+            }
+            ways_to_sum_for_rolls[i][1] += num_ones;
+
+            // sum up permutations for getting all other scores
+            // rolling sum to reduce complexity by m (DICE_SIDES)
+            int rolling = 0;
+            for (int j = hog::DICE_SIDES * i - hog::DICE_SIDES + 1; j < hog::DICE_SIDES * i; ++j) {
+                rolling += ways_to_sum_for_rolls[i - 1][j];
+            }
+            for (int j = hog::DICE_SIDES * i; j >= 2 * i; --j) {
+                // update rolling sum
+                if (j - 1 >= prev_low) rolling -= ways_to_sum_for_rolls[i - 1][j - 1];
+                if (j - hog::DICE_SIDES >= prev_low) rolling += ways_to_sum_for_rolls[i - 1][j - hog::DICE_SIDES];
+                ways_to_sum_for_rolls[i][j] = rolling;
+            }
+        }
+    }
+}
+}  // namespace
+
+HogCore::HogCore() {
+    precompute();
+}
+
+double HogCore::win_rate(const HogStrategy& strat, const HogStrategy& oppo_strat) {
+    return (win_rate_going_first(strat, oppo_strat) + win_rate_going_last(strat,oppo_strat)) * 0.5;
+}
+
+double HogCore::win_rate_going_first(const HogStrategy& strat, const HogStrategy& oppo_strat) {
+    clear_win_rates();
+    return HogCore::compute_win_rate_recursive(strat, oppo_strat, 0, 0, 0, 0, hog::ENABLE_TIME_TROT);
+}
+
+double HogCore::win_rate_going_last(const HogStrategy& strat, const HogStrategy& oppo_strat) {
+    clear_win_rates();
+    return 1.0 - HogCore::compute_win_rate_recursive(oppo_strat, strat, 0, 0, 0, 0, hog::ENABLE_TIME_TROT);
+}
+
+double HogCore::compute_win_rate_recursive(const HogStrategy& strat, const HogStrategy & oppo_strat, int score, int oppo_score, int who, int turn, int trot) {
+    double& win_rate = win_rates[score][oppo_score][who][turn][trot];
+    if (win_rate == 0.0) {
+        int rolls = strat.get(score, oppo_score);
+        auto take_turn = [&](int k) {
+            int new_score = score + k, new_oppo_score = oppo_score;
+            if (hog::ENABLE_SWINE_SWAP &&
+                    hog::is_swap(new_score, new_oppo_score)) {
+                std::swap(new_score, new_oppo_score);
+            }
+            double delta;
+            if (new_score >= hog::GOAL) {
+                delta = 1.0; // immediate win, yay
+            } else if (new_oppo_score >= hog::GOAL) {
+                delta = 0.0; // immediate loss due to swapping!
+            } else {
+                // no one wins, add win rate at next round
+                if (hog::ENABLE_TIME_TROT && trot && turn == rolls) {
+                    // apply Time Trot
+                    delta =
+                        compute_win_rate_recursive(strat, oppo_strat, 
+                                new_score, new_oppo_score, who, (turn + 1) % hog::MOD_TROT, 0);
+                } else {
+                    // no Time Trot, go to opponent's round
+                    delta = 1.0 - compute_win_rate_recursive(oppo_strat, strat,
+                            new_oppo_score, new_score, who ^ 1, 
+                            (hog::ENABLE_TIME_TROT * (turn + 1)) % hog::MOD_TROT, hog::ENABLE_TIME_TROT); 
+                }
+            }
+            return delta;
+        };
+
+        if (rolls == 0) {
+            win_rate = take_turn(hog::free_bacon(oppo_score));
+        } else {
+            win_rate += take_turn(1) * ways_to_sum_for_rolls[rolls][1];
+            int total_times_score_counted = ways_to_sum_for_rolls[rolls][1];
+            for (int k = 2*rolls; k <= hog::DICE_SIDES * rolls; ++k) {
+                win_rate += take_turn(k) * ways_to_sum_for_rolls[rolls][k];
+                // add to total so we can divide by this later.
+                total_times_score_counted += ways_to_sum_for_rolls[rolls][k];
+            }
+            win_rate /= total_times_score_counted;
+        }
+        win_rate += 1.0;
+    }
+    return win_rate - 1.0;
+}
+
+void HogCore::clear_win_rates() {
+    // Quick and dirty clear
+    memset(win_rates, 0, sizeof win_rates);
+}
+}
