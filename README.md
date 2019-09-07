@@ -33,7 +33,7 @@ CMake configuration is included but totally not required. To use CMake,
 # Quickstart example
 
 First time:
-```
+```py
 import bacon
 sess = bacon.Session('fall_20XX')
 oauth = bacon.ok.OAuthSession(session = sess)
@@ -47,7 +47,7 @@ bacon.html.render(session=sess, template_path='hog.template.html', output_path='
 ```
 
 Later, after reopening Python, everything is saved, and some of the options may be omitted:
-```
+```py
 import bacon
 sess = bacon.Session('fall_20XX')
 oauth = bacon.ok.OAuthSession(session = sess)
