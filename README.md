@@ -161,11 +161,11 @@ bacon.html.render(session=sess)
 ```
 after the first call.
 
-* To recursively converts all hog_contest.py in some directories returining a list of Strategy objects:
+* To recursively converts all hog_contest.py in some directories returning a list of Strategy objects:
 ```
 bacon.io.convert(paths...)
 ```
-(kwargs: source_name_suffix, verbose)
+(kwargs: source_name_suffix: only converts file names with given suffix, verbose: whether to print verbosely)
 
 * To sync a directory, i.e. convert only changed files (previously converted files are saved in the session config and compared)
 ```
@@ -183,15 +183,17 @@ strat = bacon.io.read_legacy(path)     read legacy Bacon .strat format
 
 * OK integration
 ```py
-oauth = bacon.ok.OAuthSession() # temporary
+oauth = bacon.ok.OAuthSession() # temporary session
 oauth = bacon.ok.OAuthSession(session = bacon_session) # persists with Session
 oauth.auth() # returns token, refreshes automatically
 ```
 To download submissions:
 ```
-oauth.download("hctest", "cal/cs61a/fa18/proj01contest", "hog_contest.py")
+oauth.download("hctest", "cal/cs61a/fa18/proj01contest"[, "hog_contest.py"])
 ```
-To sync submissions to session (must use constructor with session):
+(Arguments are: output directory, assignment name, name of file to download from the assignment, default "hog_contest.py")
+
+To sync submissions directly from OK to session in one go (must use constructor with session):
 ```
 oauth.sync(assignment = "cal/cs61a/fa18/proj01contest")
 ```
