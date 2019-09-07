@@ -25,18 +25,20 @@ sess.unlink()             'unlinks' a session, deleting persistence
                           which will be deleted when you exit Python
 
 sess.ids()                list all strategy ids
-sess.names()              list all strategy namess
+sess.names()              list all strategy names
 len(sess)                 number of strategies
 
 Usage: Strategies
 sess.strategies()         get a list of Strategy objects
-stat = sess['id']         get Strategy object by id
-stat[our, opponent]       get roll number in strategy
-stat[our, opponent] = x   set roll number in strategy
+strat = sess['id']        get Strategy object by id
+strat[our, opponent]      get roll number in strategy
+strat[our, opponent] = x  set roll number in strategy
 strat.set_const(i)        set all rolls to a constant
 strat.set_random()        set all rolls randomly
 strat.array()             get numpy array of roll numbers (int8)
 strat.set_array()         set roll numbers from numpy array (must be int8)
+strat.draw()              draw a strategy diagram identical to that in
+                          the original Bacon
 
 Usage: Contest flow / Results
 sess.run([n_threads])     runs contest (tries to reuse old results).
@@ -54,7 +56,7 @@ str(res)                  gives more concise version of above
 res.rankings              returns a rankings list, which is a list
                           of tuples: (strategy index in contest, wins)
 res.ids()                 get list of strategy ids in contest
-res.names()               get list of strategy namess in contest
+res.names()               get list of strategy names in contest
 res[i]                    get the internal 'half-row' of win rates
                           for player i (representing the triangular
                           matrix) this row will have i entries and
@@ -80,6 +82,13 @@ bacon.io.write_py(Strategy, path)      create valid hog_contest.py script
                                        strategy
 bacon.io.write_legacy(Strategy, path)  write legacy Bacon .strat format
 strat = bacon.io.read_legacy(path)     read legacy Bacon .strat format
+
+* OK integration
+oauth = bacon.ok.OKServerOAuthSession()
+oauth.authenticate() # returns token, refreshes automatically
+
+To download submissions (authenticates automatically):
+oauth.download_assignment_submissions("cal/cs61a/fa18/proj01contest", "hctest", "hog_contest.py")
 """
 
 from _bacon import *

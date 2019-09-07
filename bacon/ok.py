@@ -201,27 +201,28 @@ class OKServerOAuthSession:
     """ Represents OK OAuth state """
     def __init__(self, access_token='', refresh_token='', expires_at=-1, session = ''):
         """ Create OK OAuth state with given tokens, and expiration """
+        self.session = self.refresh_token = self.access_token = None
         if session: 
-            self.access_token = session.config()['ok_access_token']
-            self.refresh_token = session.config()['ok_refresh_token']
-            self.expires_at = int(session.config()['ok_expires_at'])
+            config = session.config()
+            if 'ok_access_token' in config:
+                self.access_token = config['ok_access_token']
+            if 'ok_refresh_token' in config:
+                self.refresh_token = config['ok_refresh_token']
+            if 'ok_expires_at' in config:
+                self.expires_at = int(config['ok_expires_at'])
             self.session = session
         elif access_token and refresh_token and expires_at >= 0:
             self.access_token = str(access_token)
             self.refresh_token = str(refresh_token)
             self.expires_at = expires_at
-            self.session = None
-        else:
-            self.access_token = None
-            self.refresh_token = None
-            self.session = None
 
     def _dump(self):
         """ Dump state to a Bacon session """
         if self.session is not None and self.access_token is not None:
-            session.config()['ok_access_token'] = self.access_token
-            session.config()['ok_refresh_token'] = self.refresh_token
-            session.config()['ok_expires_at'] = str(self.expires_at)
+            config = self.session.config()
+            config['ok_access_token'] = self.access_token
+            config['ok_refresh_token'] = self.refresh_token
+            config['ok_expires_at'] = str(self.expires_at)
 
     def refresh(self):
         """ Refreshes a token """
@@ -240,11 +241,11 @@ class OKServerOAuthSession:
         return True
 
     def authenticate(self, force_reauth = False):
-        """Returns (OAuth access token, ttl in seconds, refresh token)
-        The access token can be passed to the server for identification,
-        while the refresh token can be used to refresh it automatically.
-        If force_reauth is specified then will re-authenticate the user
-        else tries to reuse or refresh previous token
+        """
+        Returns OAuth access token which can be passed to the server
+        for identification. If force_reauth is specified then will
+        force re-authenticate the user; else tries to reuse or
+        refresh previous token
         """
         # Attempts to import SSL or raises an exception
         try:
@@ -258,10 +259,7 @@ class OKServerOAuthSession:
 
         # Refresh the token if not forcing reauth
         if not force_reauth and self.refresh():
-            print(self.access_token)
-            print(self.expires_at)
-            print(self.refresh_token)
-            return
+            return self.access_token
 
         # Perform OAuth
         print("Token is not available, performing OAuth")
@@ -279,7 +277,7 @@ class OKServerOAuthSession:
             cur_time = int(time.time())
             self.expires_at = cur_time + expires_in
             self._dump()
-        print('Got token:', self.access_token)
+        return self.access_token
 
     def download_assignment_submissions(self, assignment, output_dir, subm_file_name, email_separator = '-'):
         """

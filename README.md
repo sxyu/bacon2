@@ -167,9 +167,10 @@ strat = bacon.io.read_legacy(path)     read legacy Bacon .strat format
 ```
 
 * OK integration
-```
-oauth = bacon.ok.OKServerOAuthSession()
-oauth.authenticate()
+```py
+oauth = bacon.ok.OKServerOAuthSession() # temporary
+oauth = bacon.ok.OKServerOAuthSession(bacon_session) # persists with Session
+oauth.authenticate() # returns token, refreshes automatically
 ```
 To download submissions:
 ```
