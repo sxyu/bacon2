@@ -30,7 +30,37 @@ CMake configuration is included but totally not required. To use CMake,
 
 2. `pip3 install .`
 
-# Usage
+# Quickstart example
+
+First time:
+```
+import bacon
+sess = bacon.Session('fall_20XX')
+oauth = bacon.ok.OAuthSession(session = sess)
+
+# will open browser to authorize the first time
+oauth.sync(assignment='cal/cs61a/faXX/proj01contest')
+
+sess.run()
+bacon.html.render(session=sess, template_path='hog.template.html', output_path='index.html')
+# Have some script copy index.html to leaderboard server
+```
+
+Later, after reopening Python, everything is saved, and some of the options may be omitted:
+```
+import bacon
+sess = bacon.Session('fall_20XX')
+oauth = bacon.ok.OAuthSession(session = sess)
+
+# should auto-refresh the token unless it has been > 8 hours
+oauth.sync()
+
+sess.run()
+bacon.html.render(session=sess)
+```
+Bacon will try to reused cached results and skip converting strategies whenever possible. 
+
+# Detailed Usage
 
 Launch Python 3 and `import bacon`
 
@@ -193,7 +223,7 @@ oauth.download("hctest", "cal/cs61a/fa18/proj01contest"[, "hog_contest.py"])
 ```
 (Arguments are: output directory, assignment name, name of file to download from the assignment, default "hog_contest.py")
 
-To sync submissions directly from OK to session in one go (must use constructor with session):
+To sync submissions directly from OK to session in one go (must create session in the second way: bacon.ok.OAuthSession(session)):
 ```
 oauth.sync(assignment = "cal/cs61a/fa18/proj01contest")
 ```
