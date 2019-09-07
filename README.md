@@ -164,6 +164,7 @@ bacon.io.write_py(Strategy, path)      create valid hog_contest.py script
                                        strategy (similar to hogmat)
 bacon.io.write_legacy(Strategy, path)  write legacy Bacon .strat format
 strat = bacon.io.read_legacy(path)     read legacy Bacon .strat format
+```
 
 * OK integration
 ```
