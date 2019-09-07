@@ -30,6 +30,7 @@ Session::Session(const std::string &name) : name(name) {
         util::create_dir(session_dir);
         strats_path = session_dir + "/strategies";
         results_path = session_dir + "/results";
+        config_path = session_dir + "/config";
         if (!load_state()) {
             throw std::runtime_error(std::string("Bacon internal error: failed to load persistent state for session: ") + name);
         }
@@ -247,6 +248,10 @@ Results::Ptr Session::run(int num_threads, bool quiet) {
     return results;
 }
 
+std::shared_ptr<SessConfig> Session::get_config() {
+    return std::make_shared<SessConfig>(*this);
+}
+
 bool Session::is_persistent() const {
     return !name.empty();
 }
@@ -273,26 +278,48 @@ bool Session::load_state() {
 
     std::ifstream results_file(results_path,
             std::ios::in | std::ios::binary);
-    // No results
-    if (!results_file) return true;
-    uint64_t num_result_strats;
-    util::read_bin(results_file, num_result_strats);
-    results = std::make_shared<Results>();
-    for (int i = 0; i < num_result_strats; ++i) {
-        auto strat = std::make_shared<Strategy>(this);
-        results_file >> *strat;
-        results->strategies.push_back(std::move(strat));
+    if (results_file) {
+        uint64_t num_result_strats;
+        util::read_bin(results_file, num_result_strats);
+        results = std::make_shared<Results>();
+        for (int i = 0; i < num_result_strats; ++i) {
+            auto strat = std::make_shared<Strategy>(this);
+            results_file >> *strat;
+            results->strategies.push_back(std::move(strat));
+        }
+
+        results->table.resize(num_result_strats);
+        for (size_t i = 0; i < results->table.size(); ++i) {
+            results->table[i].resize(i);
+            for (size_t j = 0; j < results->table[i].size(); ++j) {
+                util::read_bin(results_file, results->table[i][j]);
+            }
+        }
+        results->make_rankings();
+        results_file.close();
     }
 
-    results->table.resize(num_result_strats);
-    for (size_t i = 0; i < results->table.size(); ++i) {
-        results->table[i].resize(i);
-        for (size_t j = 0; j < results->table[i].size(); ++j) {
-            util::read_bin(results_file, results->table[i][j]);
+    std::ifstream config_file(config_path,
+            std::ios::in | std::ios::binary);
+    if (config_file) {
+        uint64_t num_configs;
+        util::read_bin(config_file, num_configs);
+        while (num_configs--) {
+            uint64_t key_len, value_len;
+            std::string key, value;
+
+            util::read_bin(config_file, key_len);
+            key.resize(key_len);
+            config_file.read(&key[0], key_len);
+
+            util::read_bin(config_file, value_len);
+            value.resize(value_len);
+            config_file.read(&value[0], value_len);
+
+            config[key] = value;
         }
+        config_file.close();
     }
-    results->make_rankings();
-    results_file.close();
     return true;
 }
 
@@ -336,6 +363,29 @@ void Session::maybe_serialize_results() {
         }
     }
     results_file.close();
+}
+
+void Session::maybe_serialize_config() {
+    // No persistence, exit
+    if (name.empty() || results == nullptr) return;
+
+    // Save the config
+    std::ofstream config_file(config_path,
+            std::ios::out | std::ios::binary);
+    if (!config_file) {
+        throw new std::runtime_error("Bacon internal error: session config file could not be opened for writing");
+    }
+    util::write_bin(config_file,
+            static_cast<uint64_t>(config.size()));
+    for (auto& key_value : config) {
+        util::write_bin(config_file,
+                static_cast<uint64_t>(key_value.first.size()));
+        config_file.write(key_value.first.c_str(), key_value.first.size());
+        util::write_bin(config_file,
+                static_cast<uint64_t>(key_value.second.size()));
+        config_file.write(key_value.second.c_str(), key_value.second.size());
+    }
+    config_file.close();
 }
 
 // Result implementation
@@ -417,6 +467,15 @@ void Results::make_rankings() {
         }
         return a.second > b.second;
     });
+}
+
+std::string SessConfig::get(const std::string& key) const {
+    return sess.config[key];
+}
+
+void SessConfig::set(const std::string& key, const std::string& value) {
+    sess.config[key] = value;
+    sess.maybe_serialize_config();
 }
 
 }  // namespace bacon

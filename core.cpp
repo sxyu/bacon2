@@ -54,20 +54,28 @@ double HogCore::win_rate(const HogStrategy& strat, const HogStrategy& oppo_strat
 
 double HogCore::win_rate_going_first(const HogStrategy& strat, const HogStrategy& oppo_strat) {
     clear_win_rates();
-    return compute_win_rate_recursive(strat, oppo_strat, 0, 0, 0, 0, hog::ENABLE_TIME_TROT);
+    return compute_win_rate_recursive(strat, oppo_strat, 0, 0, 0, 0, 0, 0, hog::ENABLE_TIME_TROT);
 }
 
 double HogCore::win_rate_going_last(const HogStrategy& strat, const HogStrategy& oppo_strat) {
     clear_win_rates();
-    return 1.0 - compute_win_rate_recursive(oppo_strat, strat, 0, 0, 0, 0, hog::ENABLE_TIME_TROT);
+    return 1.0 - compute_win_rate_recursive(oppo_strat, strat, 0, 0, 0, 0, 0, 0, hog::ENABLE_TIME_TROT);
 }
 
-double HogCore::compute_win_rate_recursive(const HogStrategy& strat, const HogStrategy & oppo_strat, int score, int oppo_score, int who, int turn, int trot) {
-    double& win_rate = win_rates[score][oppo_score][who][turn][trot];
+double HogCore::compute_win_rate_recursive(const HogStrategy& strat, const HogStrategy & oppo_strat, int score, int oppo_score, int who, int last_rolls, int oppo_last_rolls, int turn, int trot) {
+    if (!hog::ENABLE_FERAL_HOGS) {
+        last_rolls = oppo_last_rolls = 0;
+    }
+    double& win_rate = win_rates[score][oppo_score][who][last_rolls][oppo_last_rolls][turn][trot];
     if (win_rate == 0.0) {
         int rolls = strat.get(score, oppo_score);
+        // Take turn with score increase of k
         auto take_turn = [&](int k) {
             int new_score = score + k, new_oppo_score = oppo_score;
+            if (hog::ENABLE_FERAL_HOGS) {
+                if (std::abs(rolls - last_rolls) == hog::FERAL_HOGS_ABSDIFF)
+                    score += 3;
+            }
             if (hog::ENABLE_SWINE_SWAP &&
                     hog::is_swap(new_score, new_oppo_score)) {
                 std::swap(new_score, new_oppo_score);
@@ -83,12 +91,11 @@ double HogCore::compute_win_rate_recursive(const HogStrategy& strat, const HogSt
                     // apply Time Trot
                     delta =
                         compute_win_rate_recursive(strat, oppo_strat, 
-                                new_score, new_oppo_score, who, (turn + 1) % hog::MOD_TROT, 0);
+                                new_score, new_oppo_score, who, rolls, oppo_last_rolls, (turn + 1) % hog::MOD_TROT, 0);
                 } else {
                     // no Time Trot, go to opponent's round
                     delta = 1.0 - compute_win_rate_recursive(oppo_strat, strat,
-                            new_oppo_score, new_score, who ^ 1, 
-                            (hog::ENABLE_TIME_TROT * (turn + 1)) % hog::MOD_TROT, hog::ENABLE_TIME_TROT); 
+                            new_oppo_score, new_score, who ^ 1, oppo_last_rolls, rolls, (hog::ENABLE_TIME_TROT * (turn + 1)) % hog::MOD_TROT, hog::ENABLE_TIME_TROT); 
                 }
             }
             return delta;

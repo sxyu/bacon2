@@ -50,6 +50,9 @@ struct HogStrategy {
     /** Set number of rolls safely */
     void set(int our_score, int oppo_score, RollType value);
 
+    /** Draw the strategy diagram as in Bacon 1 */
+    void draw();
+
     /** Pointer to session */
     Session* sess;
 

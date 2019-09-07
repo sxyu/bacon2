@@ -42,6 +42,20 @@ struct Results {
     std::vector<std::pair<int, int> > rankings;
 };
 
+/** Config wrapper for Python use.
+ *  Note: this is not actually used for config. Rather, it
+ *  is a wrapper class that makes accessing settings in Python
+ *  simpler. */
+struct SessConfig {
+    SessConfig (Session& sess) : sess(sess) {}
+
+    std::string get(const std::string& key) const;
+    void set(const std::string& key, const std::string& value);
+
+    /** Owning session */
+    Session& sess;
+};
+
 /** A Bacon session */
 struct Session {
     /** Create a new session.
@@ -104,6 +118,9 @@ struct Session {
     /** Run the contest */
     Results::Ptr run(int num_threads, bool quiet = false);
 
+    /** Get shared pointer to configuration, for Python use */
+    std::shared_ptr<SessConfig> get_config();
+
     /** Returns true if this is a persistent session */
     bool is_persistent() const;
 
@@ -113,12 +130,15 @@ struct Session {
     /** Contest results */
     Results::Ptr results = nullptr;
 
+    /** Stores configurations. */
+    std::map<std::string, std::string> config;
+
 private:
     /** Stores strategies. */
     std::map<std::string, Strategy::Ptr> strategies;
     
     /** Persistence file paths */
-    std::string strats_path, results_path;
+    std::string strats_path, results_path, config_path;
 
     /** Deserialize the state */
     bool load_state();
@@ -129,6 +149,10 @@ private:
     /** Serialize the results in the session, if persistent session */
     void maybe_serialize_results();
 
-    friend Strategy; 
+    /** Serialize the config in the session, if persistent session */
+    void maybe_serialize_config();
+
+    friend Strategy;
+    friend SessConfig; 
 };
 }

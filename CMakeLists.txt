@@ -6,6 +6,7 @@ endif()
 
 project( bacon )
 
+option(BUILD_TESTS "Build Bacon tests" ON)
 set( CMAKE_CXX_STACK_SIZE "10000000" )
 set( CMAKE_CXX_STANDARD 11 )
 set( CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake_modules" )
@@ -15,6 +16,7 @@ if( NOT CMAKE_BUILD_TYPE )
 endif()
 
 set( PROJ_NAME "bacon" )
+set( TEST_NAME "bacon_test" )
 set( OUTPUT_NAME "bacon" )
 
 include( CheckCXXCompilerFlag )
@@ -68,7 +70,6 @@ include_directories(
 
 set(
   SOURCES
-  main.cpp
   session.cpp
   core.cpp
   config.cpp
@@ -86,7 +87,11 @@ set(
 )
 
 set( OUTPUT_NAME )
-pybind11_add_module( ${PROJ_NAME} ${HEADERS} ${SOURCES} )
-#target_include_directories( ${OUTPUT_NAME} PRIVATE ${INCLUDE_DIR} )
-#set_target_properties( ${PROJ_NAME} PROPERTIES OUTPUT_NAME ${OUTPUT_NAME} )
-#target_link_libraries( ${PROJ_NAME} ${DEPENDENCIES} )
+pybind11_add_module( ${PROJ_NAME} ${HEADERS} ${SOURCES} main.cpp )
+
+if ( ${BUILD_TESTS} )
+    add_executable ( ${TEST_NAME} ${HEADERS} ${SOURCES} test.cpp )
+    if ( CMAKE_COMPILER_IS_GNUCXX )
+        target_link_libraries( ${TEST_NAME} -pthread )
+    endif ()
+endif ()

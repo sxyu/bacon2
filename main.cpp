@@ -11,6 +11,7 @@ namespace py = pybind11;
 
 namespace {
     using bacon::Session;
+    using bacon::SessConfig;
     using bacon::Results;
     using bacon::Strategy;
     using bacon::util::trim_name;
@@ -44,6 +45,7 @@ PYBIND11_MODULE(_bacon, m) {
         .def("set_array", [](Strategy& strat, py::array_t<Strategy::RollType, py::array::c_style | py::array::forcecast>& arr) {
             strat.set_from_buffer(arr.data());
         }, "Set from a Numpy array of roll numbers")
+        .def("draw", &Strategy::draw, "Draw the strategy diagram, just as in the original Bacon")
         .def_readwrite("name", &Strategy::name, "The strategy name (readonly)")
         .def_readonly("id", &Strategy::unique_id, "The strategy unique id (readonly)")
         .def("__getitem__", [](Strategy& strat, py::tuple& tup) {
@@ -59,6 +61,27 @@ PYBIND11_MODULE(_bacon, m) {
         .def("__repr__", [](Strategy& strat){
                 return "bacon.Strategy('" + strat.unique_id + "', name = '" + trim_name(strat.name, 40) + "')";
             })
+    ;
+    
+    py::class_<SessConfig, std::shared_ptr<SessConfig> >(m, "Config")
+        .def("__getitem__", &SessConfig::get, "Get operator")
+        .def("__setitem__", &SessConfig::set, "Set operator")
+        .def("__len__", [](SessConfig& config) {
+            return config.sess.config.size();
+        }, "Number of config options set")
+        .def("__repr__", [](SessConfig& config) {
+                    std::string result = "bacon.ConfigMap {";
+                    for (auto& key_value: config.sess.config) {
+                        result.append(key_value.first);
+                        result.append(": ");
+                        result.append(key_value.second);
+                        result.append(", ");
+                    }
+                    result.pop_back();
+                    result.pop_back();
+                    result.push_back('}');
+                    return result;
+                }, "Show string representation")
     ;
 
     py::class_<Results, Results::Ptr>(m, "Results")
@@ -110,6 +133,7 @@ PYBIND11_MODULE(_bacon, m) {
                 py::arg("quiet") = false)
         .def("is_persistent", &Session::is_persistent, "Checks whether this is a persistent (named) session")
         .def("has_results", [](Session& sess){return sess.results != nullptr;}, "Checks whether the session has results")
+        .def("config", [](Session& sess){return sess.get_config();}, "Get the config map for the session")
         .def("results", [](Session& sess){
             if (sess.results == nullptr) {
                 throw std::runtime_error("Results are not available for this session, please run the contest with run() first");
@@ -138,8 +162,11 @@ PYBIND11_MODULE(_bacon, m) {
     config_m.attr("MOD_TROT") = bacon::hog::MOD_TROT;
     config_m.attr("MAX_ROLLS") = bacon::hog::MAX_ROLLS;
     config_m.attr("MIN_ROLLS") = bacon::hog::MIN_ROLLS;
+    config_m.attr("FERAL_HOGS_ABSDIFF") = bacon::hog::FERAL_HOGS_ABSDIFF;
     config_m.attr("ENABLE_TIME_TROT") = bacon::hog::ENABLE_TIME_TROT;
     config_m.attr("ENABLE_SWINE_SWAP") = bacon::hog::ENABLE_SWINE_SWAP;
+    config_m.attr("ENABLE_FERAL_HOGS") = bacon::hog::ENABLE_FERAL_HOGS;
+    config_m.attr("WIN_EPSILON") = bacon::WIN_EPSILON;
     config_m.def("swine_swap", bacon::hog::is_swap);
     config_m.def("free_bacon", bacon::hog::free_bacon);
     m.doc() = "Bacon 2: Hog Contest Engine C++ extension";

@@ -89,6 +89,46 @@ void HogStrategy::set_const(RollType roll) {
     if (sess) sess->maybe_serialize_strategies();
 }
 
+void HogStrategy::draw() {
+    std::cout << "Y-axis is player score, X-axis is opponent score. Bottom left is 0, 0.\n" << std::endl;
+    for (int i = hog::GOAL - 2; i >= 0; i -= 2) {
+        std::cout << "[";
+        for (int j = 0; j < hog::GOAL; ++j) {
+            int result = (get(i, j) + get(i + 1, j)) / 2;
+            switch (result) {
+            case 0:
+                std::cout << " ";
+                break;
+            case 1:
+            case 2:
+                std::cout << ":";
+                break;
+            case 3:
+            case 4:
+                std::cout << "|";
+                break;
+            case 5:
+            case 6:
+                std::cout << "%";
+                break;
+            case 7:
+            case 8:
+                std::cout << "\u2593";
+                break;
+            case 9:
+            case 10:
+                std::cout << "\u2588";
+                break;
+            default:
+                std::cout << "??";
+            }
+        }
+        std::cout << "]" << std::endl;
+    }
+
+    std::cout << "\nLEGEND:  [  ] = 0  [::] = 1,2  [||] = 3,4  [%%] = 5,6  [\u2593\u2593] = 7,8  [\u2588\u2588] = 9,10." << std::endl;
+}
+
 std::ostream& operator<<(std::ostream& os, const HogStrategy& strat) {
     os.write("\n", 1);
     util::write_bin(os, static_cast<uint64_t>(strat.unique_id.size()));

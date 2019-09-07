@@ -18,11 +18,17 @@ const int GOAL = 100;
 // Time trot modulus 
 const int MOD_TROT = 5;
 
+// Feral hogs required absolute roll difference
+const int FERAL_HOGS_ABSDIFF = 2;
+
 // Whether time trot is enabled
 const bool ENABLE_TIME_TROT = true;
 
 // Whether swine swap is enabled
 const bool ENABLE_SWINE_SWAP = true;
+
+// Whether feral hogs is enabled
+const bool ENABLE_FERAL_HOGS = true;
 
 
 // Free bacon rule definition (edit in config.cpp)
