@@ -63,22 +63,28 @@ PYBIND11_MODULE(_bacon, m) {
             })
     ;
     
-    py::class_<SessConfig, std::shared_ptr<SessConfig> >(m, "Config")
-        .def("__getitem__", &SessConfig::get, "Get operator")
+    py::class_<SessConfig, std::shared_ptr<SessConfig> >(m, "SessionConfig")
+        .def("__getitem__", &SessConfig::get, "Get operator, throws IndexError if not present")
         .def("__setitem__", &SessConfig::set, "Set operator")
+        .def("remove", &SessConfig::remove, "Remove config entry by name, does nothing if not present")
+        .def("__contains__", [](SessConfig& config, const std::string& name) {
+            return config.sess.config.count(name) == 1;
+        }, "In operator")
         .def("__len__", [](SessConfig& config) {
             return config.sess.config.size();
         }, "Number of config options set")
         .def("__repr__", [](SessConfig& config) {
-                    std::string result = "bacon.ConfigMap {";
+                    std::string result = "bacon.SessionConfig {";
                     for (auto& key_value: config.sess.config) {
                         result.append(key_value.first);
                         result.append(": ");
                         result.append(key_value.second);
                         result.append(", ");
                     }
-                    result.pop_back();
-                    result.pop_back();
+                    if (!config.sess.config.empty()) {
+                        result.pop_back();
+                        result.pop_back();
+                    }
                     result.push_back('}');
                     return result;
                 }, "Show string representation")

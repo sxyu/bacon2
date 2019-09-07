@@ -68,6 +68,8 @@ Extra utils
 * To render the HTML leaderboard (pretty hacky)
 bacon.html.render(res, 'hog.template.html', 'output.html')
 
+* To render the HTML leaderboard (pretty hacky)
+
 * To recursively converts all hog_contest.py in some directories
 * returining a list of Strategy objects:
 bacon.io.convert(paths...)
@@ -81,4 +83,4 @@ strat = bacon.io.read_legacy(path)     read legacy Bacon .strat format
 """
 
 from _bacon import *
-from . import html, io
+from . import html, io, ok

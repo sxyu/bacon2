@@ -49,8 +49,10 @@ struct Results {
 struct SessConfig {
     SessConfig (Session& sess) : sess(sess) {}
 
+    /** Config accessors */
     std::string get(const std::string& key) const;
     void set(const std::string& key, const std::string& value);
+    void remove(const std::string& key);
 
     /** Owning session */
     Session& sess;

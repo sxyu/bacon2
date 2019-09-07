@@ -470,11 +470,21 @@ void Results::make_rankings() {
 }
 
 std::string SessConfig::get(const std::string& key) const {
-    return sess.config[key];
+    auto it = sess.config.find(key);
+    if (it != sess.config.end()) {
+        return it->second;
+    } else {
+        throw std::out_of_range(std::string("Config entry '" + key + "' does not exist"));
+    }
 }
 
 void SessConfig::set(const std::string& key, const std::string& value) {
     sess.config[key] = value;
+    sess.maybe_serialize_config();
+}
+
+void SessConfig::remove(const std::string& key) {
+    sess.config.erase(key);
     sess.maybe_serialize_config();
 }
 
