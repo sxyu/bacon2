@@ -17,8 +17,20 @@ sess = bacon.Session('x') create a persistent session.
                           to exist.
 bacon.sessions()          list all persistent session names.
 
-sess.add('id'[, 'name'])  add a strategy with id
+sess.add('id'[,'name'])   add a strategy with id and display name
+                          (display name is shown on scoreboard,
+                           id is usually student's email)
+                          if name is not specified then the id is used
+                          as the name.
+sess.add('id', 'name', x) (overflow from above) add a strategy
+                          with id and display name
+                          and initialize all rolls to x (default
+                          is 0)
+sess.add_random()         add a strategy with each roll number
+                          chosen uniformly at random
+sess.add(Strategy)        add a strategy object directly
 sess.remove('id')         remove a strategy with id
+sess.remove(Strategy)     remove a strategy object
 sess.clear()              clear all strategies
 sess.unlink()             'unlinks' a session, deleting persistence
                           files and converting to transient session
@@ -69,12 +81,21 @@ res.array()               get numpy array of win rates
 Extra utils
 * To render the HTML leaderboard (pretty hacky)
 bacon.html.render(res, 'hog.template.html', 'output.html')
+OR
+bacon.html.render(session=sess, template_path='hog.template.html', output_path='output.html')
+The second form allows you to use just 
+bacon.html.render(session=sess)
+after the first call.
 
 * To render the HTML leaderboard (pretty hacky)
 
 * To recursively converts all hog_contest.py in some directories
 * returining a list of Strategy objects:
 bacon.io.convert(paths...)
+(kwargs: source_name_suffix, verbose)
+
+* To sync a directory, i.e. convert only changed files (previously converted files are saved in the session config and compared)
+bacon.io.sync_dir(session, dir_path[, source_name_suffix[, verbose]])
 
 * Minor IO utils
 bacon.io.write_py(Strategy, path)      create valid hog_contest.py script
@@ -84,11 +105,16 @@ bacon.io.write_legacy(Strategy, path)  write legacy Bacon .strat format
 strat = bacon.io.read_legacy(path)     read legacy Bacon .strat format
 
 * OK integration
-oauth = bacon.ok.OKServerOAuthSession()
-oauth.authenticate() # returns token, refreshes automatically
+oauth = bacon.ok.OAuthSession() # temporary
+oauth = bacon.ok.OAuthSession(session = bacon_session) # persists with Session
+oauth.auth() # returns token, refreshes automatically
 
 To download submissions (authenticates automatically):
-oauth.download_assignment_submissions("cal/cs61a/fa18/proj01contest", "hctest", "hog_contest.py")
+oauth.download("hctest", "cal/cs61a/fa18/proj01contest", "hog_contest.py")
+
+To sync submissions to session (must use constructor with session):
+oauth.sync(assignment = "cal/cs61a/fa18/proj01contest")
+assignment is optional after the first sync.
 """
 
 from _bacon import *

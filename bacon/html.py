@@ -1,11 +1,28 @@
 """ Bacon HTML rendering util """
 
 
-def render(results, template_path, output_path):
+def render(results = None, template_path = '', output_path = '', session = None):
     """
     Render the HTML leaderboard. Contains very basic
     (hacky) template capabilities.
     """
+    if session is not None:
+        results = session.results()
+        config = session.config()
+        if not template_path:
+            if 'html_template_path' in config:
+                template_path = config['html_template_path']
+            else:
+                raise RuntimeError("template_path argument is required for the first call")
+        else:
+            config['html_template_path'] = template_path
+        if not output_path:
+            if 'html_output_path' in config:
+                output_path = config['html_output_path']
+            else:
+                raise RuntimeError("output_path argument is required for the first call")
+        else:
+            config['html_output_path'] = output_path
     template_file = open(template_path, "r", encoding="UTF-8")
     html = template_file.read()
     team_names_raw = results.names()

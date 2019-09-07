@@ -42,10 +42,14 @@ std::vector<std::string> Session::list_sessions() {
 }
 
 Strategy::Ptr Session::add(Strategy::Ptr strategy) {
-    strategies[strategy->unique_id] = strategy;
     if (strategy->sess != nullptr) {
         throw std::runtime_error("Adding strategy to multiple sessions is disallowed. Please remove it first.");
     }
+    auto it = strategies.find(strategy->unique_id);
+    if (it != strategies.end()) {
+        it->second->sess = nullptr;
+    }
+    strategies[strategy->unique_id] = strategy;
     strategy->sess = this;
     maybe_serialize_strategies();
     return strategy;
@@ -81,6 +85,9 @@ bool Session::remove_by_id(const std::string& unique_id) {
 }
 
 void Session::clear() {
+    for (auto& strat : strategies) {
+        strat.second->sess = nullptr;
+    }
     strategies.clear();
     maybe_serialize_strategies();
 }
@@ -219,7 +226,7 @@ Results::Ptr Session::run(int num_threads, bool quiet) {
                 std::lock_guard<std::mutex> lock(mutex);
                 if (matchup_index >= matchups.size()) break;
                 worker_matchup_index = matchup_index++;
-                if (!quiet && matchup_index % 500 == 0) {
+                if (!quiet && matchup_index % 50 == 0) {
                     std::cerr << matchup_index << " of " <<
                         matchups.size() << " matchups played\n";
                 }
@@ -260,21 +267,18 @@ bool Session::load_state() {
     // Load the strategies
     std::ifstream strats_file(strats_path,
             std::ios::in | std::ios::binary);
-
-    // Does not exist yet
-    if (!strats_file) return true;
-    std::cerr << "Bacon: resuming session '" << name << "'\n";
-
-    // Load the file
-    uint64_t num_strats;
-    util::read_bin(strats_file, num_strats);
-    strategies.clear();
-    while (num_strats--) {
-        auto strat = std::make_shared<Strategy>(this);
-        strats_file >> *strat;
-        strategies[strat->unique_id] = std::move(strat);
+    if (strats_file) {
+        // Load the file
+        uint64_t num_strats;
+        util::read_bin(strats_file, num_strats);
+        strategies.clear();
+        while (num_strats--) {
+            auto strat = std::make_shared<Strategy>(this);
+            strats_file >> *strat;
+            strategies[strat->unique_id] = std::move(strat);
+        }
+        strats_file.close();
     }
-    strats_file.close();
 
     std::ifstream results_file(results_path,
             std::ios::in | std::ios::binary);
@@ -367,7 +371,7 @@ void Session::maybe_serialize_results() {
 
 void Session::maybe_serialize_config() {
     // No persistence, exit
-    if (name.empty() || results == nullptr) return;
+    if (name.empty() || config.empty()) return;
 
     // Save the config
     std::ofstream config_file(config_path,

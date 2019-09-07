@@ -78,7 +78,7 @@ PYBIND11_MODULE(_bacon, m) {
                     for (auto& key_value: config.sess.config) {
                         result.append(key_value.first);
                         result.append(": ");
-                        result.append(key_value.second);
+                        result.append(trim_name(key_value.second, 40));
                         result.append(", ");
                     }
                     if (!config.sess.config.empty()) {

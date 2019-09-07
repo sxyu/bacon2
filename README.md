@@ -151,10 +151,25 @@ bacon.config.free_bacon(a)     gets score obtainable through free bacon
 ```
 bacon.html.render(res, 'hog.template.html', 'output.html')
 ```
+OR
+```
+bacon.html.render(session=sess, template_path='hog.template.html', output_path='output.html')
+```
+The second form allows you to use just 
+```
+bacon.html.render(session=sess)
+```
+after the first call.
 
 * To recursively converts all hog_contest.py in some directories returining a list of Strategy objects:
 ```
 bacon.io.convert(paths...)
+```
+(kwargs: source_name_suffix, verbose)
+
+* To sync a directory, i.e. convert only changed files (previously converted files are saved in the session config and compared)
+```
+bacon.io.sync_dir(session, dir_path[, source_name_suffix[, verbose]])
 ```
 
 * Minor IO utils
@@ -168,11 +183,17 @@ strat = bacon.io.read_legacy(path)     read legacy Bacon .strat format
 
 * OK integration
 ```py
-oauth = bacon.ok.OKServerOAuthSession() # temporary
-oauth = bacon.ok.OKServerOAuthSession(bacon_session) # persists with Session
-oauth.authenticate() # returns token, refreshes automatically
+oauth = bacon.ok.OAuthSession() # temporary
+oauth = bacon.ok.OAuthSession(session = bacon_session) # persists with Session
+oauth.auth() # returns token, refreshes automatically
 ```
 To download submissions:
 ```
-oauth.download_assignment_submissions("cal/cs61a/fa18/proj01contest", "hctest", "hog_contest.py")
+oauth.download("hctest", "cal/cs61a/fa18/proj01contest", "hog_contest.py")
 ```
+To sync submissions to session (must use constructor with session):
+```
+oauth.sync(assignment = "cal/cs61a/fa18/proj01contest")
+```
+`assignment` is optional after the first sync.
+

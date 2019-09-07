@@ -56,7 +56,7 @@ def _pick_free_port(hostname=REDIRECT_HOST, port=0):
     except OSError as e:
         if port == 0:
             print('Unable to find an open port for authentication.')
-            raise AuthenticationException(e)
+            raise BaconOkException(e)
         else:
             return _pick_free_port(hostname, 0)
     addr, port = s.getsockname()
@@ -110,7 +110,7 @@ def _get_code():
     host_name = REDIRECT_HOST
     try:
         port_number = _pick_free_port(port=REDIRECT_PORT)
-    except AuthenticationException:
+    except BaconOkException:
         # Could not bind to REDIRECT_HOST:0, try localhost instead
         host_name = 'localhost'
         port_number = _pick_free_port(host_name, 0)
@@ -197,20 +197,24 @@ def _get_code_via_browser(redirect_uri, host_name, port_number):
         raise oauth_exception
     return code_response
 
-class OKServerOAuthSession:
+class OAuthSession:
     """ Represents OK OAuth state """
-    def __init__(self, access_token='', refresh_token='', expires_at=-1, session = ''):
+    def __init__(self, access_token='', refresh_token='', expires_at=-1, session = None):
         """ Create OK OAuth state with given tokens, and expiration """
         self.session = self.refresh_token = self.access_token = None
-        if session: 
+        self.expires_at = -1
+        self.assignment = None
+        if session is not None: 
             config = session.config()
+            self.session = session
             if 'ok_access_token' in config:
                 self.access_token = config['ok_access_token']
             if 'ok_refresh_token' in config:
                 self.refresh_token = config['ok_refresh_token']
             if 'ok_expires_at' in config:
                 self.expires_at = int(config['ok_expires_at'])
-            self.session = session
+            if 'ok_last_download_assignment' in config:
+                self.assignment = config['ok_last_download_assignment']
         elif access_token and refresh_token and expires_at >= 0:
             self.access_token = str(access_token)
             self.refresh_token = str(refresh_token)
@@ -218,18 +222,24 @@ class OKServerOAuthSession:
 
     def _dump(self):
         """ Dump state to a Bacon session """
-        if self.session is not None and self.access_token is not None:
+        if self.session is not None:
             config = self.session.config()
-            config['ok_access_token'] = self.access_token
-            config['ok_refresh_token'] = self.refresh_token
-            config['ok_expires_at'] = str(self.expires_at)
+            if self.access_token:
+                config['ok_access_token'] = self.access_token
+            if self.refresh_token:
+                config['ok_refresh_token'] = self.refresh_token
+            if self.expires_at >= 0:
+                config['ok_expires_at'] = str(self.expires_at)
+            if self.assignment:
+                config['ok_last_download_assignment'] = self.assignment
 
     def refresh(self):
         """ Refreshes a token """
         if not self.refresh_token:
             return False
         cur_time = int(time.time())
-        if cur_time < self.expires_at - 10:
+        if cur_time < self.expires_at - 3600:
+            # expires in 1 hour
             return True
         self.access_token, expires_in, self.refresh_token = _make_refresh_post(OK_SERVER_URL, self.refresh_token)
         if not (self.access_token and expires_in):
@@ -240,7 +250,7 @@ class OKServerOAuthSession:
         self._dump()
         return True
 
-    def authenticate(self, force_reauth = False):
+    def auth(self, force_reauth = False):
         """
         Returns OAuth access token which can be passed to the server
         for identification. If force_reauth is specified then will
@@ -279,17 +289,25 @@ class OKServerOAuthSession:
             self._dump()
         return self.access_token
 
-    def download_assignment_submissions(self, assignment, output_dir, subm_file_name, email_separator = '-'):
+    def download(self, output_dir, assignment = '', subm_file_name = 'hog_contest.py', email_separator = '-', quiet = False):
         """
         Download all submissions for an assignment from OK to the specified directory.
         Example:
-        oauth.download_assignment_submissions("cal/cs61a/fa18/proj01contest",
-                                              "~/hog_contest_submissions", "hog_contest.py")
+        oauth.download_assignment_submissions("~/hog_contest_submissions",
+                "cal/cs61a/fa18/proj01contest", "hog_contest.py")
+        If assignment is not given, will use the last used assignment
+        if available, errors else.
         """
-        self.authenticate()
+        self.auth()
         if not self.access_token:
             raise OAuthException(
                 error='Authentication failed, could not download assignment')
+
+        if not assignment:
+            assignment = self.assignment
+        else:
+            self.assignment = assignment
+            self._dump()
 
         ok_subm_api_url = "{}{}{}/submissions?access_token={}".format(OK_SERVER_URL, ASSIGNMENT_ENDPOINT, assignment, self.access_token)
 
@@ -315,8 +333,37 @@ class OKServerOAuthSession:
                  continue
             cnt += 1
             subm_dir = join(output_dir, out_name)
-            os.makedirs(subm_dir)
+            os.makedirs(subm_dir, exist_ok=True)
             #contents = contents.replace('\t', '    ') # HACK to fix tab problems
             with open(join(subm_dir, subm_file_name), 'w', encoding="UTF-8") as f:
                 f.write(contents)
-        print("{} submissions downloaded from OK server".format(cnt))
+        if not quiet:
+            print("OAuthSession.download: {} submissions downloaded from OK server".format(cnt))
+
+    def sync(self, tmp_dir_name = 'bacon-hogcontest-tmp', assignment = '', subm_file_name = 'hog_contest.py', quiet = False):
+        """ Direct session synchronization """
+        if self.session is None:
+            log.error('Cannot sync an OAuthSession with no attached bacon.Session')
+            return
+        if assignment:
+            self.assignment = assignment
+        if not self.assignment:
+            log.error('The assignment argument is not specified and you have not synced this session previously. Please use oauth_session.sync(assignment="assignment_name"), where assignment_name is for example "cal/cs61a/fa18/proj01contest".')
+            return
+
+        import os#, sys, imp, random, string, re, errno, threading, time, queue
+        os.makedirs(tmp_dir_name, exist_ok=True)
+
+        if not quiet:
+            print("OAuthSession.sync: Downloading submissions from OK server...")
+
+        self.download(tmp_dir_name, assignment=assignment, subm_file_name=subm_file_name, quiet=quiet)
+
+        if not quiet:
+            print("OAuthSession.sync: Converting and importing strategies...")
+        from .io import sync_dir
+        sync_dir(self.session, tmp_dir_name, source_name_suffix=subm_file_name, verbose=not quiet)
+
+        import shutil, os
+        shutil.rmtree(tmp_dir_name, True) # clean up
+

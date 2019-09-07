@@ -65,7 +65,7 @@ ERROR_DEFAULT_ROLL = 5 # default roll in case of invalid strategy function (will
 TIMEOUT_SECONDS = 45 # max time a student's submission should run
 
 def convert(*args, **kwargs):
-    """ Magic function to convert a Python file, usually hog_contest.py """
+    """ Magic function to recursively convert all Python files with specific name, usually hog_contest.py, in each directory given in args """
     from functools import wraps
     from _bacon import Strategy as _Strategy, config as _bacon_config
     import os, sys, imp, random, string, re, errno, threading, time, queue
@@ -133,8 +133,9 @@ def convert(*args, **kwargs):
         return decorator
 
     @timeout(TIMEOUT_SECONDS)
-    def convert(file):  
-        """ convert a single file """
+    def convert_one(file):  
+        """ convert a single file """ 
+
         import shutil, os, sys
         sys.setrecursionlimit(200000)
         module_path = file[:-3] # cut off .py
@@ -146,33 +147,41 @@ def convert(*args, **kwargs):
         sys.path.append(os.path.dirname(os.path.realpath(__file__)))
 
         module_dir_name = ""
-        if '/' in module_dir:
-            module_dir_name = module_dir[module_dir.rindex('/')+1:]
-        elif '\\' in module_dir:
-            module_dir_name = module_dir[module_dir.rindex('\\')+1:]
+        module_dir_name = os.path.basename(module_dir)
         if not module_dir_name:
             module_dir_name = module_name
+
+        content = ""
+        with open(file, 'r') as fp:
+            content = fp.read()
+
+        # check if already in cache
+        if old_files_dict and module_dir_name in old_files_dict:
+            if old_files_dict[module_dir_name] == content:
+                if files_dict is not None:
+                    files_dict[module_dir_name] = None
+                return
+        if files_dict is not None:
+            files_dict[module_dir_name] = content
 
         # import module
         try:
             from . import dice, hog, ucb
             module = imp.load_source('hog_contest', file)
             # try to prevent use of dangerous libraries, although not going to be possible really
-            module.subprocess = module.shutil = "trolled"
-            if hasattr(module, "os"):
-                module.os.rmdir = module.os.remove = "trolled"
+            module.subprocess = module.shutil = module.os = "trolled"
 
         except Exception as e:
             # report errors while importing
             eprint("\nERROR: error occurred while loading " + file + ":")
             eprint(type(e).__name__ + ': ' + str(e))
-            all_errors.append((file, "[Skipped] Import error: " + type(e).__name__ + " (maybe you are trying to import a module e.g. hog, dice, numpy?)", "with email: " + module_dir_name[:2] + "...@"))
+            all_errors.append((file, "[Error] Import error: " + type(e).__name__ + " (maybe you are trying to import a module e.g. hog, dice, numpy?)", "with email: " + module_dir_name[:2] + "...@"))
             eprint("skipping...\n")
             return
         if hasattr(module, STRATEGY_FUNC_ATTR):
             strat = getattr(module, STRATEGY_FUNC_ATTR)
         else:
-            all_errors.append((file, "[Skipped] Missing " + STRATEGY_FUNC_ATTR))
+            all_errors.append((file, "[Error] Missing " + STRATEGY_FUNC_ATTR))
             eprint("ERROR: " + file + " has no attribute " + STRATEGY_FUNC_ATTR + " , skipping...")
             del module
             return
@@ -244,7 +253,7 @@ def convert(*args, **kwargs):
             eprint(errname)
 
         outputs.append(out_strat)
-        eprint("hogconv: converted strategy " + module_dir_name + " name='" + strat_name + "'")
+        print("bacon.io.convert: Converted strategy " + module_dir_name + " name='" + strat_name + "'")
 
         del module
         nonlocal count
@@ -257,13 +266,20 @@ def convert(*args, **kwargs):
             if os.path.isdir(path):
                 convert_dir(path)
             elif file == '__init__.py' or file == __file__ or \
-                 file[-len(SOURCE_NAME_SUFFIX):] != SOURCE_NAME_SUFFIX:
+                 file[-len(source_name_suffix):] != source_name_suffix:
                 continue
             else:
-                convert(path)
+                convert_one(path)
 
-    # add current directory to sys.path to load any custom depencencies
+    # Add current directory to sys.path to load any custom depencencies
     sys.path.append('')
+
+    verbose = not ('verbose' in kwargs and not kwargs['verbose'])
+    source_name_suffix = kwargs['source_name_suffix'] if ('source_name_suffix' in kwargs) else SOURCE_NAME_SUFFIX
+
+    # For internal use with caching system
+    old_files_dict = kwargs['old_files_dict'] if ('old_files_dict' in kwargs) else None
+    files_dict = kwargs['files_dict'] if ('files_dict' in kwargs) else None
 
     for i in range(len(args)):
         path = args[i]
@@ -271,21 +287,60 @@ def convert(*args, **kwargs):
             if os.path.isdir(path):
                 convert_dir(path)
             else:
-                convert(path)
+                convert_one(path)
         else:
             eprint("ERROR: can't access " + path + ", skipping...")
-
-    verbose = not ('verbose' in kwargs and not kwargs['verbose'])
 
     if len(args) < 1:
         eprint("Expected at least 1 argument: file name.")  
         return;
     else:
-        eprint("converted a total of " + str(count) + (" strategies." if count != 1 else " strategy."))
+        print("bacon.io.convert: Converted a total of " + str(count) + (" strategies." if count != 1 else " strategy."))
 
     if all_errors:
-        print("ERRORS occurred during conversion:")
+        eprint("ERRORS occurred during conversion:")
         for path, error_msg, identifier in all_errors:
-            print("Team", identifier, ": ", error_msg, ". At path", path)
+            eprint("Team ", identifier, ": ", error_msg, ". At path: ", path, sep='')
     return outputs
+
+def sync_dir(sess, base_dir, source_name_suffix = 'hog_contest.py', verbose = True):
+    import json
+    config = sess.config()
+    old_files_dict = json.loads(config['sync_dir_records']) if 'sync_dir_records' in config else {}
+    files_dict = {}
+    strats = convert(base_dir, source_name_suffix=source_name_suffix, verbose=verbose, old_files_dict=old_files_dict, files_dict=files_dict)
+
+    # Make a set converted strategy ids
+    converted_strat_ids = set()
+    for strat in strats:
+        converted_strat_ids.add(strat.id)
+
+    # Find all strategies that did not change from before syncing
+    # (These are mapped to None by converter which skips converting
+    #  them to save time)
+    persisting_strats = []
+    for strat_uid in sess.ids():
+        if strat_uid in files_dict and files_dict[strat_uid] is None:
+            persisting_strats.append(sess[strat_uid])
+            files_dict[strat_uid] = old_files_dict[strat_uid]
+    if verbose and persisting_strats:
+        print("bacon.io.sync_dir: Found", len(persisting_strats), "unchanged strateg(ies), using cached versions...")
+
+    # Clear and add new strategies
+    sess.clear()
+    for strat in strats:
+        sess.add(strat)
+
+    if verbose:
+        print("bacon.io.sync_dir: Synced a total of", len(strats), "modified or new strateg(ies)")
+
+    # Add the persisting strategies detected earlier
+    for strat in persisting_strats:
+        sess.add(strat)
+
+    # Save the files dict
+    config['sync_dir_records'] = json.dumps(files_dict)
+
+    if verbose:
+        print("bacon.io.sync_dir: Sync done")
 
