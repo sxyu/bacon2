@@ -63,8 +63,12 @@ double HogCore::win_rate_going_last(const HogStrategy& strat, const HogStrategy&
 }
 
 double HogCore::compute_win_rate_recursive(const HogStrategy& strat, const HogStrategy & oppo_strat, int score, int oppo_score, int who, int last_rolls, int oppo_last_rolls, int turn, int trot) {
+    // If some rules are disabled then we can collapse some dimensions in the state
     if (!hog::ENABLE_FERAL_HOGS) {
         last_rolls = oppo_last_rolls = 0;
+    }
+    if (!hog::ENABLE_TIME_TROT) {
+        turn = trot = 0;
     }
     double& win_rate = win_rates[score][oppo_score][who][last_rolls][oppo_last_rolls][turn][trot];
     if (win_rate == 0.0) {

@@ -7,20 +7,21 @@ are merged into one module.
 
 ## Dependencies
 
-- A modern enough C++ compiler supporting at least C++11
-
 - Python 3. I am using 3.5, should probably work for other minor versions as well.
+  - Python 2 seems to work as well, at least for the core functionality (sessions/strategies), but I do not guarentee this
 
- - Please also install `libpython3`, `libpython3-dev`
+- A modern enough C++ compiler supporting at least C++11
+ - These should be available with the OS typically
+ - On Windows I recommend using MSYS2, or you can use Visual Studio
+ - You may also need to install `libpython3`, `libpython3-dev`, not sure
 
 ## Steps
 
-1. `git clone https://github.com/sxyu/bacon2 && cd bacon2`
-
-2. `git submodule update --init --recursive`
-     (I tried to do this automatically but am not sure if it works)
-
-3. `pip3 install .`
+```sh
+git clone https://github.com/sxyu/bacon2
+cd bacon2
+pip3 install .
+```
 
 ## CMake
 
