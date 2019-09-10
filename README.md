@@ -11,9 +11,9 @@ are merged into one module.
   - Python 2 seems to work as well, at least for the core functionality (sessions/strategies), but I do not guarentee this
 
 - A modern enough C++ compiler supporting at least C++11
- - These should be available with the OS typically
- - On Windows I recommend using MSYS2, or you can use Visual Studio
- - You may also need to install `libpython3`, `libpython3-dev`, not sure
+  - These should be available with the OS typically
+  - On Windows I recommend using MSYS2, or you can use Visual Studio
+  - You may also need to install `libpython3`, `libpython3-dev`, I am not sure
 
 ## Steps
 
