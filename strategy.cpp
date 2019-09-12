@@ -2,8 +2,10 @@
 
 #include <cstring>
 #include <functional>
+#include <memory>
 #include "util.hpp"
 #include "session.hpp"
+#include "core.hpp"
 
 namespace bacon {
 
@@ -23,7 +25,11 @@ HogStrategy::HogStrategy(Session* sess, const std::string& unique_id,
 
 HogStrategy::HogStrategy(const std::string& unique_id,
         const std::string& name)
-    : sess(nullptr), unique_id(unique_id), name(name.empty() ? unique_id : name) { }
+    : sess(nullptr), unique_id(unique_id), name(name.empty() ? unique_id : name) {
+        // Since this function is exposed to Python, we can't keep uninitialized memory
+        // (else would seg fault when used)
+        set_const(0);
+    }
 
 
 HogStrategy& HogStrategy::operator=(const HogStrategy& other) {
@@ -87,6 +93,30 @@ void HogStrategy::set_const(RollType roll) {
     }
     memset(rolls.data(), roll, ROLLS_SIZE);
     if (sess) sess->maybe_serialize_strategies();
+}
+
+void HogStrategy::set_optimal() {
+    Core::make_optimal_strategy(*this);
+}
+
+void HogStrategy::train(HogStrategy::Ptr opponent, int num_steps) {
+    std::unique_ptr<Core> core (new Core);
+    core->train_strategy(*this, *opponent, num_steps);
+}
+
+double HogStrategy::win_rate(HogStrategy::Ptr opponent) const {
+    auto core = std::unique_ptr<Core>(new Core());
+    return core->win_rate(*this, *opponent);
+}
+
+double HogStrategy::win_rate0(HogStrategy::Ptr opponent) const {
+    auto core = std::unique_ptr<Core>(new Core());
+    return core->win_rate_going_first(*this, *opponent);
+}
+
+double HogStrategy::win_rate1(HogStrategy::Ptr opponent) const {
+    auto core = std::unique_ptr<Core>(new Core());
+    return core->win_rate_going_last(*this, *opponent);
 }
 
 void HogStrategy::draw() {

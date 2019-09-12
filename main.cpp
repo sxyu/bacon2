@@ -25,9 +25,19 @@ PYBIND11_MODULE(_bacon, m) {
     py::class_<Strategy, Strategy::Ptr>(m, "Strategy")
         .def(py::init<const std::string &, const std::string &>(),
                 "Construct new strategy with id, name",
-                py::arg("id") = "", py::arg("name") = "")
+                py::arg("id"), py::arg("name") = "")
         .def("set_random", &Strategy::set_random, "Set roll numbers uniformly at random") 
         .def("set_const", &Strategy::set_const, "Set roll numbers to a constant") 
+        .def("set_optimal", &Strategy::set_optimal, "Set to optimal strategy (only optimal if time trot/feral hogs disabled)") 
+        .def("clone", [](Strategy& strat) {
+                    Strategy::Ptr new_strat(new Strategy);
+                    *new_strat = strat;
+                    return new_strat;
+                }, "Clone the strategy") 
+        .def("train", &Strategy::train, "Begin hill climbing against an opponent for given number of turns (opponent can be self)") 
+        .def("win_rate", &Strategy::win_rate, "Compute win rate against opponent") 
+        .def("win_rate0", &Strategy::win_rate0, "Compute win rate against opponent, going first") 
+        .def("win_rate1", &Strategy::win_rate1, "Compute win rate against opponent, going second") 
         .def("num_diff", &Strategy::num_diff, "Find number of differences to another strategy")
         .def("equals", &Strategy::equals, "Checks if exactly equal to another strategy")
         .def("array", [](Strategy& strat) {

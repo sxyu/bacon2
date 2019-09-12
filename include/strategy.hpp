@@ -35,6 +35,9 @@ struct HogStrategy {
     /** Set each roll to a random value */
     void set_random();
 
+    /** Set to the optimal strategy (only actually optimal with no incomplete information rule) */
+    void set_optimal();
+
     /** Set from buffer */
     void set_from_buffer(const int8_t * buf);
 
@@ -49,6 +52,18 @@ struct HogStrategy {
 
     /** Set number of rolls safely */
     void set(int our_score, int oppo_score, RollType value);
+
+    /** Begin hill climbing vs. other strategy for given number of steps */
+    void train(HogStrategy::Ptr opponent, int num_steps = 1000);
+
+    /** Compute win rate against opponent */
+    double win_rate(HogStrategy::Ptr opponent) const;
+
+    /** Compute win rate against opponent, going first */
+    double win_rate0(HogStrategy::Ptr opponent) const;
+
+    /** Compute win rate against opponent, going second */
+    double win_rate1(HogStrategy::Ptr opponent) const;
 
     /** Draw the strategy diagram as in Bacon 1 */
     void draw();

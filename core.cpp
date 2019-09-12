@@ -1,7 +1,9 @@
 #include "core.hpp"
 
 #include <cstring>
-//#include <iostream>
+#include <limits>
+#include <iostream>
+#include <memory>
 #include "strategy.hpp"
 
 namespace bacon {
@@ -44,30 +46,87 @@ void precompute() {
 }
 }  // namespace
 
-HogCore::HogCore() {
+HogCore::HogCore(bool enable_time_trot, bool enable_feral_hogs, bool enable_swine_swap) :
+                enable_time_trot(enable_time_trot),
+                enable_feral_hogs(enable_feral_hogs),
+                enable_swine_swap(enable_swine_swap) {
     precompute();
 }
 
 double HogCore::win_rate(const HogStrategy& strat, const HogStrategy& oppo_strat) {
-    return (win_rate_going_first(strat, oppo_strat) + win_rate_going_last(strat,oppo_strat)) * 0.5;
+    clear_win_rates();
+    double wr0 = compute_win_rate_recursive(strat, oppo_strat, 0, 0, 0, 0, 0, 0, enable_time_trot);
+    clear_win_rates();
+    double wr1 = 1.0 - compute_win_rate_recursive(oppo_strat, strat, 0, 0, 1, 0, 0, 0, enable_time_trot);
+    return (wr0 + wr1) * 0.5;
 }
 
 double HogCore::win_rate_going_first(const HogStrategy& strat, const HogStrategy& oppo_strat) {
     clear_win_rates();
-    return compute_win_rate_recursive(strat, oppo_strat, 0, 0, 0, 0, 0, 0, hog::ENABLE_TIME_TROT);
+    return compute_win_rate_recursive(strat, oppo_strat, 0, 0, 0, 0, 0, 0, enable_time_trot);
 }
 
 double HogCore::win_rate_going_last(const HogStrategy& strat, const HogStrategy& oppo_strat) {
     clear_win_rates();
-    return 1.0 - compute_win_rate_recursive(oppo_strat, strat, 0, 0, 0, 0, 0, 0, hog::ENABLE_TIME_TROT);
+    return 1.0 - compute_win_rate_recursive(oppo_strat, strat, 0, 0, 0, 0, 0, 0, enable_time_trot);
+}
+
+void HogCore::train_strategy(HogStrategy& strat, const HogStrategy& opponent, int num_steps) {
+    int steps = 0;
+    clear_win_rates();
+    compute_win_rate_recursive(strat, opponent, 0, 0, 0, 0, 0, 0, enable_time_trot);
+    while (steps < num_steps) {
+        for (int i = 0; i < hog::GOAL; ++i) {
+            for (int j = 0; j < hog::GOAL; ++j) {
+                double best_wr = std::numeric_limits<double>::min();
+                int best_roll = 0;
+                for (int rolls = hog::MIN_ROLLS; rolls <= hog::MAX_ROLLS; ++rolls) {
+                    strat.set(i, j, rolls);
+                    win_rates[i][j][0][0][0][0][enable_time_trot] = 0.;
+                    double new_wr = compute_win_rate_recursive(strat, opponent, i, j, 0, 0, 0, 0, enable_time_trot);
+                    if (new_wr > best_wr) {
+                        best_wr = new_wr;
+                        best_roll = rolls;
+                    }
+                }
+                strat.set(i, j, best_roll);
+                if (++steps >= num_steps) break;
+            }
+            if (steps >= num_steps) break;
+        }
+    }
+}
+
+void HogCore::make_optimal_strategy(HogStrategy& strat) {
+    std::unique_ptr<HogCore> core(new HogCore(false, false, true));
+    core->clear_win_rates();
+    for (int t = hog::GOAL + hog::GOAL - 2; t >= 0; --t) {
+        for (int j = std::max(t - hog::GOAL + 1, 0); j <= std::min(t, hog::GOAL - 1); ++j) {
+            int i = t - j;
+            double best_wr = std::numeric_limits<double>::min();
+            int best_roll = 0;
+            for (int rolls = hog::MIN_ROLLS; rolls <= hog::MAX_ROLLS; ++rolls) {
+                strat.set(i, j, rolls);
+                core->win_rates[i][j][0][0][0][0][0] = 0.;
+                double new_wr = core->compute_win_rate_recursive(strat, strat, i, j, 0, 0, 0, 0, 0);
+                if (new_wr > best_wr) {
+                    best_wr = new_wr;
+                    best_roll = rolls;
+                }
+            }
+            strat.set(i, j, best_roll);
+            core->win_rates[i][j][0][0][0][0][0] = 0.;
+            core->compute_win_rate_recursive(strat, strat, i, j, 0, 0, 0, 0, 0);
+        }
+    }
 }
 
 double HogCore::compute_win_rate_recursive(const HogStrategy& strat, const HogStrategy & oppo_strat, int score, int oppo_score, int who, int last_rolls, int oppo_last_rolls, int turn, int trot) {
     // If some rules are disabled then we can collapse some dimensions in the state
-    if (!hog::ENABLE_FERAL_HOGS) {
+    if (!enable_feral_hogs) {
         last_rolls = oppo_last_rolls = 0;
     }
-    if (!hog::ENABLE_TIME_TROT) {
+    if (!enable_time_trot) {
         turn = trot = 0;
     }
     double& win_rate = win_rates[score][oppo_score][who][last_rolls][oppo_last_rolls][turn][trot];
@@ -76,12 +135,11 @@ double HogCore::compute_win_rate_recursive(const HogStrategy& strat, const HogSt
         // Take turn with score increase of k
         auto take_turn = [&](int k) {
             int new_score = score + k, new_oppo_score = oppo_score;
-            if (hog::ENABLE_FERAL_HOGS) {
+            if (enable_feral_hogs) {
                 if (std::abs(rolls - last_rolls) == hog::FERAL_HOGS_ABSDIFF)
                     score += 3;
             }
-            if (hog::ENABLE_SWINE_SWAP &&
-                    hog::is_swap(new_score, new_oppo_score)) {
+            if (enable_swine_swap && hog::is_swap(new_score, new_oppo_score)) {
                 std::swap(new_score, new_oppo_score);
             }
             double delta;
@@ -91,7 +149,7 @@ double HogCore::compute_win_rate_recursive(const HogStrategy& strat, const HogSt
                 delta = 0.0; // immediate loss due to swapping!
             } else {
                 // no one wins, add win rate at next round
-                if (hog::ENABLE_TIME_TROT && trot && turn == rolls) {
+                if (trot && turn == rolls) {
                     // apply Time Trot
                     delta =
                         compute_win_rate_recursive(strat, oppo_strat, 
@@ -99,7 +157,7 @@ double HogCore::compute_win_rate_recursive(const HogStrategy& strat, const HogSt
                 } else {
                     // no Time Trot, go to opponent's round
                     delta = 1.0 - compute_win_rate_recursive(oppo_strat, strat,
-                            new_oppo_score, new_score, who ^ 1, oppo_last_rolls, rolls, (hog::ENABLE_TIME_TROT * (turn + 1)) % hog::MOD_TROT, hog::ENABLE_TIME_TROT); 
+                            new_oppo_score, new_score, who ^ 1, oppo_last_rolls, rolls, (turn + 1) % hog::MOD_TROT, 1); 
                 }
             }
             return delta;

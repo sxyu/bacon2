@@ -148,18 +148,15 @@ std::vector<std::string> Session::names() const {
 }
 
 double Session::win_rate(const std::string& id0, const std::string& id1) const {
-    auto core = std::unique_ptr<Core>(new Core());
-    return core->win_rate(*get(id0), *get(id1));
+    return get(id0)->win_rate(get(id1));
 }
 
 double Session::win_rate0(const std::string& id0, const std::string& id1) const {
-    auto core = std::unique_ptr<Core>(new Core());
-    return core->win_rate_going_first(*get(id0), *get(id1));
+    return get(id0)->win_rate0(get(id1));
 }
 
 double Session::win_rate1(const std::string& id0, const std::string& id1) const {
-    auto core = std::unique_ptr<Core>(new Core());
-    return core->win_rate_going_last(*get(id0), *get(id1));
+    return get(id0)->win_rate1(get(id1));
 }
 
 Results::Ptr Session::run(int num_threads, bool quiet) {
