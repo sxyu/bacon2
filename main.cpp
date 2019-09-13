@@ -32,6 +32,7 @@ PYBIND11_MODULE(_bacon, m) {
         .def("clone", &Strategy::clone, "Clone the strategy",
                 py::arg("id"), py::arg("name") = "") 
         .def("train", &Strategy::train, "Begin hill climbing against an opponent for given number of turns (opponent can be self)") 
+        .def("train_greedy", &Strategy::train_greedy, "Begin hill climbing against an opponent for given number of turns (opponent can be self)") 
         .def("win_rate", &Strategy::win_rate, "Compute win rate against opponent") 
         .def("win_rate0", &Strategy::win_rate0, "Compute win rate against opponent, going first") 
         .def("win_rate1", &Strategy::win_rate1, "Compute win rate against opponent, going second") 

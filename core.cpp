@@ -71,8 +71,34 @@ double HogCore::win_rate_going_last(const HogStrategy& strat, const HogStrategy&
     return 1.0 - compute_win_rate_recursive(oppo_strat, strat, 0, 0, 0, 0, 0, 0, enable_time_trot);
 }
 
-/** I think this one is bugged rn, should have to re-calculate entire win rate each step */
 void HogCore::train_strategy(HogStrategy& strat, const HogStrategy& opponent, int num_steps) {
+    int steps = 0;
+    // We use a clone because maybe strat == opponent
+    HogStrategy clone = strat;
+    while (steps < num_steps) {
+        for (int i = 0; i < hog::GOAL; ++i) {
+            for (int j = 0; j < hog::GOAL; ++j) {
+                if (steps % 500 == 499) std::cerr << "bacon.hog_core.train_strategy: " << steps + 1 << " steps completed\n";
+                double best_wr = std::numeric_limits<double>::min();
+                int best_roll = 0;
+                for (int rolls = hog::MIN_ROLLS; rolls <= hog::MAX_ROLLS; ++rolls) {
+                    clone.set(i, j, rolls);
+                    double new_wr = win_rate(clone, opponent);
+                    if (new_wr > best_wr) {
+                        best_wr = new_wr;
+                        best_roll = rolls;
+                    }
+                }
+                strat.set(i, j, best_roll);
+                clone.set(i, j, best_roll);
+                if (++steps >= num_steps) break;
+            }
+            if (steps >= num_steps) break;
+        }
+    }
+}
+
+void HogCore::train_strategy_greedy(HogStrategy& strat, const HogStrategy& opponent, int num_steps) {
     int steps = 0;
     clear_win_rates();
     compute_win_rate_recursive(strat, opponent, 0, 0, 0, 0, 0, 0, enable_time_trot);

@@ -22,6 +22,9 @@ struct HogCore {
     /** Train a strategy using hill climbing */
     void train_strategy(HogStrategy& strat, const HogStrategy& opponent, int num_steps = 1000);
 
+    /** Train a strategy using local hill climbing (very fast but can make strategy worse) */
+    void train_strategy_greedy(HogStrategy& strat, const HogStrategy& opponent, int num_steps = 1000);
+
     /** Build the optimal strategy (only optimal without time trot/feral hogs */
     static void make_optimal_strategy(HogStrategy& strat);
 

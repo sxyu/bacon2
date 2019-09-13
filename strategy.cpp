@@ -113,6 +113,11 @@ void HogStrategy::train(HogStrategy::Ptr opponent, int num_steps) {
     core->train_strategy(*this, *opponent, num_steps);
 }
 
+void HogStrategy::train_greedy(HogStrategy::Ptr opponent, int num_steps) {
+    std::unique_ptr<Core> core (new Core);
+    core->train_strategy_greedy(*this, *opponent, num_steps);
+}
+
 double HogStrategy::win_rate(HogStrategy::Ptr opponent) const {
     auto core = std::unique_ptr<Core>(new Core());
     return core->win_rate(*this, *opponent);

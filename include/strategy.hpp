@@ -59,6 +59,9 @@ struct HogStrategy {
     /** Begin hill climbing vs. other strategy for given number of steps */
     void train(HogStrategy::Ptr opponent, int num_steps = 1000);
 
+    /** Begin local hill climbing vs. other strategy for given number of steps */
+    void train_greedy(HogStrategy::Ptr opponent, int num_steps = 1000000);
+
     /** Compute win rate against opponent */
     double win_rate(HogStrategy::Ptr opponent) const;
 
