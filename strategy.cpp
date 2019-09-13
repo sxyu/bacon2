@@ -26,6 +26,9 @@ HogStrategy::HogStrategy(Session* sess, const std::string& unique_id,
 HogStrategy::HogStrategy(const std::string& unique_id,
         const std::string& name)
     : sess(nullptr), unique_id(unique_id), name(name.empty() ? unique_id : name) {
+        if (unique_id.empty()) {
+            throw new std::invalid_argument("Strategy name cannot be empty");
+        }
         // Since this function is exposed to Python, we can't keep uninitialized memory
         // (else would seg fault when used)
         set_const(0);
@@ -38,6 +41,12 @@ HogStrategy& HogStrategy::operator=(const HogStrategy& other) {
     memcpy(rolls.data(), other.rolls.data(), ROLLS_SIZE);
     sess = nullptr; // must detach
     return *this;
+}
+
+HogStrategy::Ptr HogStrategy::clone(const std::string& id, const std::string& name) {
+    HogStrategy::Ptr cloned(new HogStrategy(id, name));
+    memcpy(cloned->rolls.data(), rolls.data(), ROLLS_SIZE);
+    return cloned;
 }
 
 int HogStrategy::num_diff(const HogStrategy& other) const {

@@ -29,6 +29,9 @@ struct HogStrategy {
     // Standard assignment operators
     HogStrategy& operator=(const HogStrategy& other);
 
+    /** Clone this strategy */ 
+    HogStrategy::Ptr clone(const std::string& id, const std::string& name = "");
+
     /** Set all rolls to constant */
     void set_const(RollType roll);
 

@@ -71,6 +71,7 @@ double HogCore::win_rate_going_last(const HogStrategy& strat, const HogStrategy&
     return 1.0 - compute_win_rate_recursive(oppo_strat, strat, 0, 0, 0, 0, 0, 0, enable_time_trot);
 }
 
+/** I think this one is bugged rn, should have to re-calculate entire win rate each step */
 void HogCore::train_strategy(HogStrategy& strat, const HogStrategy& opponent, int num_steps) {
     int steps = 0;
     clear_win_rates();
@@ -78,6 +79,7 @@ void HogCore::train_strategy(HogStrategy& strat, const HogStrategy& opponent, in
     while (steps < num_steps) {
         for (int i = 0; i < hog::GOAL; ++i) {
             for (int j = 0; j < hog::GOAL; ++j) {
+                if (steps % 500 == 499) std::cerr << "bacon.hog_core.train_strategy: " << steps + 1 << " steps completed\n";
                 double best_wr = std::numeric_limits<double>::min();
                 int best_roll = 0;
                 for (int rolls = hog::MIN_ROLLS; rolls <= hog::MAX_ROLLS; ++rolls) {
@@ -115,8 +117,7 @@ void HogCore::make_optimal_strategy(HogStrategy& strat) {
                 }
             }
             strat.set(i, j, best_roll);
-            core->win_rates[i][j][0][0][0][0][0] = 0.;
-            core->compute_win_rate_recursive(strat, strat, i, j, 0, 0, 0, 0, 0);
+            core->win_rates[i][j][0][0][0][0][0] = best_wr + 1.0;
         }
     }
 }

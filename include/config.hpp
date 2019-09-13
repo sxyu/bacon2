@@ -22,7 +22,7 @@ const int MOD_TROT = 5;
 const int FERAL_HOGS_ABSDIFF = 2;
 
 // Whether time trot is enabled
-const bool ENABLE_TIME_TROT = true;
+const bool ENABLE_TIME_TROT = false;
 
 // Whether swine swap is enabled
 const bool ENABLE_SWINE_SWAP = true;
