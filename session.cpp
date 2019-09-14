@@ -168,7 +168,7 @@ Results::Ptr Session::run(int num_threads, bool quiet) {
     new_results->table.resize(strategies.size());
     for (auto & strat : strategies) {
         id_map[strat.second->unique_id] = index;
-        new_results->strategies.push_back(std::make_shared<Strategy>());
+        new_results->strategies.push_back(std::make_shared<Strategy>("_tmp"));
         // Make copy but detach from session
         *new_results->strategies.back() = *strat.second;
         new_results->table[index].resize(index);
