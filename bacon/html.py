@@ -42,7 +42,7 @@ def render(results = None, template_path = '', output_path = '', session = None)
     import datetime
     import pytz
     timezone = pytz.timezone(CONTEST_TIMEZONE)
-    local_time = timezone.localize(datetime.datetime.now())
+    local_time = datetime.datetime.now().astimezone(timezone)
     html = html.replace("{%TIMESTAMP%}", str(local_time))
     html = html.replace("{%TEAMS%}", str(team_names))
     html = html.replace("{%WINRATE_MATRIX%}", str(results.array().tolist()))
