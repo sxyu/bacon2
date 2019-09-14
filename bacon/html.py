@@ -1,11 +1,12 @@
 """ Bacon HTML rendering util """
-
+CONTEST_TIMEZONE = "America/Los_Angeles" # UCLA
 
 def render(results = None, template_path = '', output_path = '', session = None):
     """
     Render the HTML leaderboard. Contains very basic
     (hacky) template capabilities.
     """
+    from html import escape
     if session is not None:
         results = session.results()
         config = session.config()
@@ -25,7 +26,8 @@ def render(results = None, template_path = '', output_path = '', session = None)
             config['html_output_path'] = output_path
     template_file = open(template_path, "r", encoding="UTF-8")
     html = template_file.read()
-    team_names_raw = results.names()
+
+    team_names_raw = [escape(name) for name in results.names()]
     ranking_text, team_names = [], []
 
     for rank, (index, wins) in enumerate(results.rankings):
@@ -38,7 +40,10 @@ def render(results = None, template_path = '', output_path = '', session = None)
     # TODO: This is very hacky, use a template library e.g. Jinja?
     html = html.replace("{%RANKINGS%}", "\n".join(ranking_text))
     import datetime
-    html = html.replace("{%TIMESTAMP%}", str(datetime.datetime.now()))
+    import pytz
+    timezone = pytz.timezone(CONTEST_TIMEZONE)
+    local_time = timezone.localize(datetime.datetime.now())
+    html = html.replace("{%TIMESTAMP%}", str(local_time))
     html = html.replace("{%TEAMS%}", str(team_names))
     html = html.replace("{%WINRATE_MATRIX%}", str(results.array().tolist()))
 
