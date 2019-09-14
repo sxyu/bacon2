@@ -129,14 +129,15 @@ def _get_code():
         return _get_code_via_browser(redirect_uri,
             host_name, port_number)
     except Exception as e:
+        import traceback
         log.debug('Error with Browser Auth:\n{}'.format(traceback.format_exc()))
         log.warning('Browser auth failed, falling back to browserless auth')
         # Try to do without a browser
         redirect_uri = 'urn:ietf:wg:oauth:2.0:oob'
         print("\nOpen this URL in a browser window:\n")
-        print('{}/client/login/'.format(OK_SERVER_URL))
+        print("{}/oauth/authorize?response_type=code&redirect_uri=urn%3Aietf%3Awg%3Aoauth%3A2.0%3Aoob&client_id={}&scope={}".format(OK_SERVER_URL, CLIENT_ID, OAUTH_SCOPE))
         code = input('\nPaste your code here: ')
-        return _make_code_post(server_url(cmd_args), code, redirect_uri)
+        return _make_code_post(OK_SERVER_URL, code, redirect_uri)
 
 def _get_code_via_browser(redirect_uri, host_name, port_number):
     """ Get OK access code by opening User's browser """
