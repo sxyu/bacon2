@@ -32,10 +32,16 @@ def render(results = None, template_path = '', output_path = '', session = None)
     import numpy as np
     winrate_arr = results.array()
     winrate_matrix = np.zeros(winrate_arr.shape)
+    ties, prev_wins = 0, -1
     for rank, (index, wins) in enumerate(results.rankings):
-        classes = ["rank", "rank-" + str(rank)]
+        if prev_wins == wins:
+            ties += 1
+        else:
+            ties = 0
+            prev_wins = wins
+        classes = ["rank", "rank-" + str(rank - ties)]
         ranking_text.append("<li id=\"team-" + str(rank) + "\" class=\"" +
-            " ".join(classes) + "\">" + str(rank+1) +
+            " ".join(classes) + "\">" + str(rank - ties + 1) +
             ". <strong>" + team_names_raw[index] + "</strong> with " + str(wins) + " wins</li>")
         team_names.append(team_names_raw[index])
         for rank2, (index2, wins2) in enumerate(results.rankings):
