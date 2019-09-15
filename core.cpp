@@ -164,7 +164,7 @@ double HogCore::compute_win_rate_recursive(const HogStrategy& strat, const HogSt
             int new_score = score + k, new_oppo_score = oppo_score;
             if (enable_feral_hogs) {
                 if (std::abs(rolls - last_rolls) == hog::FERAL_HOGS_ABSDIFF)
-                    score += 3;
+                    new_score += 3;
             }
             if (enable_swine_swap && hog::is_swap(new_score, new_oppo_score)) {
                 std::swap(new_score, new_oppo_score);
