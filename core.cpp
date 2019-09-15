@@ -5,6 +5,7 @@
 #include <iostream>
 #include <memory>
 #include "strategy.hpp"
+#include "util.hpp"
 
 namespace bacon {
 namespace {
@@ -146,6 +147,70 @@ void HogCore::make_optimal_strategy(HogStrategy& strat) {
             core->win_rates[i][j][0][0][0][0][0] = best_wr + 1.0;
         }
     }
+}
+
+bool HogCore::play_one_game(const HogStrategy& strategy0, const HogStrategy & strategy1) {
+    auto take_turn = [](int num_rolls, int opponent_score) {
+        if (num_rolls == 0)
+            return hog::free_bacon(opponent_score);
+
+        int total = 0;
+        while (num_rolls--) {
+            int outcome = util::randint(1, hog::DICE_SIDES);
+            if (outcome == 1) return 1;
+            total += outcome;
+        }
+        return total;
+    };
+
+    int player = 0;
+    bool last_trot = false;
+    int round_number_mod = 0;
+    int score0 = 0, score1 = 0;
+    int previous_num_rolls_0 = 0, previous_num_rolls_1 = 0;
+    while (std::max(score0, score1) < hog::GOAL) {
+        int num_rolls, outcome;
+        if (player == 0) {
+            num_rolls = strategy0.get(score0, score1);
+            outcome = take_turn(num_rolls, score1);
+            score0 += outcome;
+            if (enable_feral_hogs && std::abs(previous_num_rolls_0 - num_rolls) == 2) {
+                score0 += 3;
+            }
+            previous_num_rolls_0 = num_rolls;
+        } else {
+            num_rolls = strategy1.get(score1, score0);
+            outcome = take_turn(num_rolls, score0);
+            score1 += outcome;
+            if (enable_feral_hogs && std::abs(previous_num_rolls_1 - num_rolls) == 2) {
+                score1 += 3;
+            }
+            previous_num_rolls_1 = num_rolls;
+        }
+
+        if (enable_swine_swap && hog::is_swap(score1, score0)) {
+            std::swap(score0, score1);
+        }
+        if (!enable_time_trot || round_number_mod != num_rolls || last_trot) {
+            player ^= 1;
+            last_trot = false;
+        } else {
+            last_trot = true;
+        }
+        (round_number_mod += 1) %= hog::MOD_TROT;
+    }
+    return score0 > score1;
+}
+
+double HogCore::win_rate_by_sampling(const HogStrategy& strat, const HogStrategy& oppo_strat, int half_num_samples) {
+    int wins = 0;
+    for (int i = 0; i < half_num_samples; ++i) {
+        wins += play_one_game(strat, oppo_strat);
+    }
+    for (int i = 0; i < half_num_samples; ++i) {
+        wins += !play_one_game(oppo_strat, strat);
+    }
+    return static_cast<double>(wins) / (2 * half_num_samples);
 }
 
 double HogCore::compute_win_rate_recursive(const HogStrategy& strat, const HogStrategy & oppo_strat, int score, int oppo_score, int who, int last_rolls, int oppo_last_rolls, int turn, int trot) {

@@ -19,6 +19,12 @@ struct HogCore {
     /** Compute exact average win rate between two strategies, with second strategy always playing first */
     double win_rate_going_last(const HogStrategy& strat, const HogStrategy& oppo_strat);
 
+    /** Plays one game between two strategies. Returns true iff the first one wins. */
+    bool play_one_game(const HogStrategy& strategy0, const HogStrategy& strategy1);
+
+    /** Compute win rate by sampling half_num_samples*2 times, going first and last alternatingly. */
+    double win_rate_by_sampling(const HogStrategy& strat, const HogStrategy& oppo_strat, int half_num_samples = 10000);
+
     /** Train a strategy using hill climbing */
     void train_strategy(HogStrategy& strat, const HogStrategy& opponent, int num_steps = 1000);
 
