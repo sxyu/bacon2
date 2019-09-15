@@ -73,7 +73,7 @@ bool test_core_win_rate_computation() {
     double empirical_wr = core->win_rate_by_sampling(strat0, strat1, 1000000);
     double computed_wr = core->win_rate(strat0, strat1);
     std::cerr << "Win rate spot-checking: empirical_wr=" << empirical_wr << ", computed_wr=" << computed_wr << "\n";
-    EXPECT_LESS(std::abs(computed_wr - empirical_wr), 0.01);
+    EXPECT_LESS(std::abs(computed_wr - empirical_wr), 0.001);
 
     Strategy strat2("test_strat2");
     strat2.set_random();
@@ -81,12 +81,12 @@ bool test_core_win_rate_computation() {
     empirical_wr = core->win_rate_by_sampling(strat0, strat2, 1000000);
     computed_wr = core->win_rate(strat0, strat2);
     std::cerr << "Win rate spot-checking: empirical_wr=" << empirical_wr << ", computed_wr=" << computed_wr << "\n";
-    EXPECT_LESS(std::abs(computed_wr - empirical_wr), 0.01);
+    EXPECT_LESS(std::abs(computed_wr - empirical_wr), 0.001);
 
     empirical_wr = core->win_rate_by_sampling(strat1, strat2, 1000000);
     computed_wr = core->win_rate(strat1, strat2);
     std::cerr << "Win rate spot-checking: empirical_wr=" << empirical_wr << ", computed_wr=" << computed_wr << "\n";
-    EXPECT_LESS(std::abs(computed_wr - empirical_wr), 0.01);
+    EXPECT_LESS(std::abs(computed_wr - empirical_wr), 0.001);
 
     END_TEST(CoreWinRateTest);
 }

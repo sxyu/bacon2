@@ -23,9 +23,19 @@ cd bacon2
 pip3 install .
 ```
 
-## CMake
+## CMake and Running Tests
 
-CMake configuration is included but totally not required. To use CMake,
+To use CMake, do as usual:
+```sh
+mkdir build && cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release
+make -j4
+```
+By default test building is enabled. To run the tests, use: `./bacon_test` inside the build directory.
+
+### Install with CMake
+
+CMake configuration to setup the Python package is included but not required.
 
 1. Rename `setup.py` to something else, then rename `setup.cmake.py` to `setup.py`
 
