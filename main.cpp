@@ -144,7 +144,6 @@ PYBIND11_MODULE(_bacon, m) {
         .def("win_rate0", &Session::win_rate0, "Compute win rate with the first strategy always going first")
         .def("win_rate1", &Session::win_rate1, "Compute win rate with the second strategy always going last")
         .def("run", &Session::run, "Run the contest with the given number of threads. A bacon.Results object is returned.",
-                py::call_guard<py::gil_scoped_release>(),
                 py::arg("num_threads") = std::thread::hardware_concurrency(),
                 py::arg("quiet") = false)
         .def("is_persistent", &Session::is_persistent, "Checks whether this is a persistent (named) session")

@@ -62,7 +62,7 @@ DEF_EMPTY_TEAM_NAME = "<no name given, email starts with {}>" # name for teams w
 
 ERROR_DEFAULT_ROLL = 5 # default roll in case of invalid strategy function (will report error)
 
-TIMEOUT_SECONDS = 45 # max time a student's submission should run
+TIMEOUT_SECONDS = 10 # max time a student's submission should run
 
 def convert(*args, **kwargs):
     """ Magic function to recursively convert all Python files with specific name, usually hog_contest.py, in each directory given in args """
