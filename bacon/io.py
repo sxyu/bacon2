@@ -38,16 +38,16 @@ def write_py(strat, path):
     from _bacon import config as _bacon_config
 
     fout = open(path, 'w', encoding='UTF-8')
-    fout.write("PLAYER_NAME = '{}'\ndef final_strategy(score, opponent_score):\n    return [".format(strat.id))
+    fout.write("PLAYER_NAME = '{}'\ndef final_strategy(score, opponent_score):\n    return [".format(strat.name))
     for r in range(_bacon_config.GOAL):
-        if r:
-            fout.write('\n')
         fout.write('[')
         for c in range(_bacon_config.GOAL):
             if c:
                 fout.write(', ')
             fout.write(str(strat[r, c]))
         fout.write(']')
+        if r < _bacon_config.GOAL - 1:
+            fout.write(',\n')
     fout.write("][score][opponent_score]\n")
     fout.close()
 

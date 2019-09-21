@@ -203,7 +203,7 @@ Results::Ptr Session::run(int num_threads, bool quiet) {
                     results->get(map_to_old_strategies[i], 
                                  map_to_old_strategies[j]);
             } else {
-                matchups.emplace_back(i, j );
+                matchups.emplace_back(i, j);
             }
         }
     }
