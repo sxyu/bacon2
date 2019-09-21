@@ -159,6 +159,7 @@ PYBIND11_MODULE(_bacon, m) {
         .def("ids", &Session::keys, "Get list of strategy unique ids (inefficient)")
         .def("names", &Session::names, "Get list of strategy namess (inefficient)")
         .def("strategies", &Session::values, "Get list of strategies (inefficient)")
+        .def("by_name", &Session::get_by_name, "Get a strategy by name (inefficient).")
         .def("__len__", &Session::size, "Get number of strategies")
         .def("__getitem__", &Session::get, "Get a strategy by id.")
         .def("__contains__", &Session::contains, "Check if contains a strategy id.")

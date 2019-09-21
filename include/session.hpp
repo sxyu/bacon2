@@ -96,6 +96,9 @@ struct Session {
     /** Get a strategy by unique id */
     Strategy::Ptr get(const std::string& id) const;
 
+    /** Get a strategy by name */
+    Strategy::Ptr get_by_name(const std::string& key) const;
+
     /** Check if contains a strategy id. */
     bool contains(const std::string& id) const;
 

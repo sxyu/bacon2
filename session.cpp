@@ -116,6 +116,15 @@ Strategy::Ptr Session::get(const std::string& id) const {
     return it->second;
 }
 
+Strategy::Ptr Session::get_by_name(const std::string& name) const {
+    for (auto& strat_pair : strategies) {
+        if (strat_pair.second->name == name) {
+            return strat_pair.second;
+        }
+    }
+    throw std::out_of_range("Strategy with specified name does not exist");
+}
+
 bool Session::contains(const std::string& id) const {
     return strategies.count(id);
 }
