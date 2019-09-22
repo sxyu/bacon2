@@ -87,6 +87,9 @@ struct Session {
     /** Clear strategies */
     void clear();
 
+    /** Clear results (cache), forcing total re-evaluation next time run() is called */
+    void clear_results();
+
     /** Make the session non-persistent */
     void unlink();
 

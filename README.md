@@ -103,6 +103,7 @@ sess.add(Strategy)        add a strategy object directly
 sess.remove('id')         remove a strategy with id
 sess.remove(Strategy)     remove a strategy object
 sess.clear()              clear all strategies
+sess.clear_results()      clear results (cache), forcing total re-evaluation next time run() is called
 sess.unlink()             'unlinks' a session, deleting persistence
                           files and converting to transient session
                           which will be deleted when you exit Python
@@ -116,7 +117,11 @@ len(sess)                 number of strategies
 ```
 Strategy(id[, name])      create an empty strategy with id and name
 sess.strategies()         get a list of Strategy objects in session
-strat = sess['id']        get Strategy object by id
+strat = sess['id']        get Strategy object by id from session
+xgfzg = sess.by_name('x') get Strategy object by name from session;
+                          if multiple strategies with name exist,
+                          returns one with lexographically least id.
+                          Very inefficient compared to get by id.
 strat[our, opponent]      get roll number in strategy
 strat[our, opponent] = x  set roll number in strategy
 strat.set_const(i)        set all rolls to a constant
@@ -125,8 +130,12 @@ strat.array()             get numpy array of roll numbers (int8)
 strat.set_array()         set roll numbers from numpy array (must be int8)
 strat.name                get/set strategy name
 strat.id                  get strategy id (immutable)
+strat.win_rate(oppo)      alt method to compute win rates
 strat.draw()              draw a strategy diagram identical to that in
                           the original Bacon
+strat.win_rate_by_sampling(oppo[, num_samples = 10000])
+                          compute win rate by sampling num_samples*2 games
+                          (num_samples as player0/1 each)
 ```
 
 ## Contest flow / Results

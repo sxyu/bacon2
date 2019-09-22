@@ -36,6 +36,8 @@ PYBIND11_MODULE(_bacon, m) {
         .def("win_rate", &Strategy::win_rate, "Compute win rate against opponent") 
         .def("win_rate0", &Strategy::win_rate0, "Compute win rate against opponent, going first") 
         .def("win_rate1", &Strategy::win_rate1, "Compute win rate against opponent, going second") 
+        .def("win_rate_by_sampling", &Strategy::win_rate_by_sampling, "Compute win rate against opponent by sampling",
+                py::arg("opponent"), py::arg("num_samples") = 10000)
         .def("num_diff", &Strategy::num_diff, "Find number of differences to another strategy")
         .def("equals", &Strategy::equals, "Checks if exactly equal to another strategy")
         .def("__eq__", &Strategy::equals, "Checks if exactly equal to another strategy")
@@ -139,6 +141,7 @@ PYBIND11_MODULE(_bacon, m) {
         .def("remove", &Session::remove, "Remove a strategy from the session.")
         .def("remove", &Session::remove_by_id, "Remove a strategy from the session.")
         .def("clear", &Session::clear, "Clear all strategies.")
+        .def("clear_results", &Session::clear_results, "Clear results (cache), forcing total re-evaluation next time run() is called")
         .def("unlink", &Session::unlink, "Unlink the session from persistent storage, making it transient. It will be destropyed once you exit python.")
         .def("win_rate", &Session::win_rate, "Compute win rate of a strategy against another")
         .def("win_rate0", &Session::win_rate0, "Compute win rate with the first strategy always going first")

@@ -57,7 +57,6 @@ HogCore::HogCore(bool enable_time_trot, bool enable_feral_hogs, bool enable_swin
 double HogCore::win_rate(const HogStrategy& strat, const HogStrategy& oppo_strat) {
     clear_win_rates();
     double wr0 = compute_win_rate_recursive(strat, oppo_strat, 0, 0, 0, 0, 0, 0, enable_time_trot);
-    clear_win_rates();
     double wr1 = 1.0 - compute_win_rate_recursive(oppo_strat, strat, 0, 0, 1, 0, 0, 0, enable_time_trot);
     return (wr0 + wr1) * 0.5;
 }
@@ -73,6 +72,7 @@ double HogCore::win_rate_going_last(const HogStrategy& strat, const HogStrategy&
 }
 
 void HogCore::train_strategy(HogStrategy& strat, const HogStrategy& opponent, int num_steps) {
+    // This is probably messed up, I haven't really used it, so beware
     int steps = 0;
     // We use a clone because maybe strat == opponent
     HogStrategy clone = strat;
@@ -100,6 +100,7 @@ void HogCore::train_strategy(HogStrategy& strat, const HogStrategy& opponent, in
 }
 
 void HogCore::train_strategy_greedy(HogStrategy& strat, const HogStrategy& opponent, int num_steps) {
+    // This is probably messed up, I haven't really used it, so beware
     int steps = 0;
     clear_win_rates();
     compute_win_rate_recursive(strat, opponent, 0, 0, 0, 0, 0, 0, enable_time_trot);

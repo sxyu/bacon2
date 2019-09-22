@@ -92,6 +92,14 @@ void Session::clear() {
     maybe_serialize_strategies();
 }
 
+void Session::clear_results() {
+    results->rankings.clear();
+    results->strategies.clear();
+    results->table.clear();
+    maybe_serialize_results();
+    results = nullptr;
+}
+
 void Session::unlink() {
     if (!name.empty()) {
         std::string session_dir = STORAGE_ROOT + name;

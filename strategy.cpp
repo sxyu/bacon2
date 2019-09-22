@@ -133,6 +133,11 @@ double HogStrategy::win_rate1(HogStrategy::Ptr opponent) const {
     return core->win_rate_going_last(*this, *opponent);
 }
 
+double HogStrategy::win_rate_by_sampling(HogStrategy::Ptr opponent, int num_samples) const {
+    auto core = std::unique_ptr<Core>(new Core());
+    return core->win_rate_by_sampling(*this, *opponent, num_samples);
+}
+
 void HogStrategy::draw() {
     std::cout << "Y-axis is player score, X-axis is opponent score. Bottom left is 0, 0.\n" << std::endl;
     for (int i = hog::GOAL - 2; i >= 0; i -= 2) {

@@ -71,6 +71,9 @@ struct HogStrategy {
     /** Compute win rate against opponent, going second */
     double win_rate1(HogStrategy::Ptr opponent) const;
 
+    /** Compute win rate against by sampling */
+    double win_rate_by_sampling(HogStrategy::Ptr opponent, int num_samples = 10000) const;
+
     /** Draw the strategy diagram as in Bacon 1 */
     void draw();
 
